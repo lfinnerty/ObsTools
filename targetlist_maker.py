@@ -29,7 +29,7 @@ if __name__ == '__main__':
 			print(error)
 		raise RuntimeError('Invalid query!')
 
-	outfile = open('starlist_'+namestr+'_'+datestr+'.txt', 'w+')
+	outfile = open('starlists/starlist_'+namestr+'_'+datestr+'.txt', 'w+')
 	for i, entry in enumerate(result_table):
 		# print(entry.keys())
 		# print(entry['FLUX_K'], entry['FLUX_R'], entry['FLUX_V'])
