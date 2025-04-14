@@ -4,16 +4,35 @@ import warnings
 warnings.filterwarnings('ignore')
 
 if __name__ == '__main__':
-	datestr = '2024-05-19'
+	datestr = '2025-01-10'
 	namestr = 'KPIC'
-	tgtnames = ['HIP 62944',
+	tgtnames = ['HD 35067',
+				'HIP 19388',
 				'HIP 81497',
+				'HIP 95771',
+				'HIP 62944',
+				'HIP 110882',
+				'79 Cyg',
 				'HIP 61960',
+				'HD 130163',
+				'* z cen',
 				'ups Her',
-				'WASP-14',
-				'HIP 56147',
-				'HIP 55507'
-			   ]
+				'HIP 82714',
+				'HAT-P-22',
+				'HD 88133',
+				'GJ 436',
+				'HD 49674',
+				'55 Cnc',
+				'WASP-33',
+				'KELT-2A',
+				'KELT-7',
+				'WASP-127',
+				'HD 102195',
+				'BD-10 3166',
+				'RX J0342.5+1216',
+				'HIP16322',
+				'DH Tau',
+				'HIP18717']
 	colwidth = 16
 
 	sbad = Simbad()
