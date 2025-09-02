@@ -25,7 +25,7 @@ if __name__ == '__main__':
 	
 
 	hdr = "\n###".join(("""# RA Dec equinox RApm Decpm offset rot RA_probe1 Dec_probe1 equinox RA_probe2 Dec_probe2 equinox pm_epoch""",
-              """name hh:mm:ss.s sdd:mm:ss yyyy.0 s.ss s.ss angle mode hh:mm:ss.s sdd:mm:ss yyyy.0 hh:mm:ss.s sdd:mm:ss yyyy.0yyyy.0\n"""))
+              """name hh:mm:ss.s sdd:mm:ss yyyy.0 s.ss s.ss angle mode hh:mm:ss.s sdd:mm:ss yyyy.0 hh:mm:ss.s sdd:mm:ss yyyy.0 yyyy.0\n"""))
 
 	# colwidth = 16
 
@@ -36,7 +36,7 @@ if __name__ == '__main__':
 	result_table = sbad.query_objects(tgtnames)
 
 	outfile = open('starlists/targetlist_magellan_'+namestr+'_'+datestr+'.txt', 'w+')
-	outfile.write(hdr+'\n')
+	outfile.write(hdr)
 	for i, entry in enumerate(result_table):
 		if entry['main_id'] == '':
 			print('Error, invalid query on', tgtnames[i])
