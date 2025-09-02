@@ -36,6 +36,7 @@ if __name__ == '__main__':
 	result_table = sbad.query_objects(tgtnames)
 
 	outfile = open('starlists/targetlist_magellan_'+namestr+'_'+datestr+'.txt', 'w+')
+	outfile.write(hdr+'\n')
 	for i, entry in enumerate(result_table):
 		if entry['main_id'] == '':
 			print('Error, invalid query on', tgtnames[i])
