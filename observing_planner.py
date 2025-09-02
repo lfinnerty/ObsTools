@@ -24,8 +24,10 @@ if __name__ == '__main__':
 	site = sys.argv[1]
 	if site.upper() in ['KECK', 'GEMINI', 'MKO']:
 		site = 'Keck'
+		sitestr = 'MKO'
 	elif site.upper() in ['MAGELLAN', 'LCO']:
 		site = 'Las Campanas Observatory'
+		sitestr = 'LCO'
 	inst = sys.argv[2]
 
 	### Input: RA, Dec, orbit parameters (a, T, t0), date
@@ -34,7 +36,9 @@ if __name__ == '__main__':
 	### load objects and dates here
 	# ### A semester
 	# hstdates = ['2025-08-18', '2025-08-20']
-	hstdates = [ '2025-07-03']
+	hstdates = [
+	 '2025-09-28','2025-09-29','2025-09-30', '2025-10-01','2025-10-02','2025-10-03','2025-10-04','2025-10-05','2025-10-06','2025-10-07','2025-10-08',
+	 '2025-10-09','2025-10-10','2025-10-11',]
 	#'2026-03-09', '2026-03-10', '2026-03-11', 
 	#			'2026-06-29', '2026-06-30', '2026-07-1', 
 	#			'2026-10-18', '2026-10-19', '2026-10-20',
@@ -198,7 +202,8 @@ if __name__ == '__main__':
 
 				kpclean = kps[~np.isnan(kps)]
 				### Check Kp decreases (i.e. between 0.25 and 0.75 in phase)
-				kp_decreasing = kpclean[-1] < kpclean[0]
+				# kp_decreasing = kpclean[-1] < kpclean[0]
+				kp_decreasing = True
 
 
 				if (np.abs(kpmax - kpmin) > delta_Kp_min and kp_decreasing):
@@ -244,7 +249,7 @@ if __name__ == '__main__':
 		ax[0].set_xlabel('UT time [hr]')
 		ax[1].set_xlabel('UT time [hr]')
 		ax[0].set_title('HST date: '+hstdates[j])
-		plt.savefig('plots/'+hstdates[j]+'.png', bbox_inches='tight')
+		plt.savefig('plots/'+hstdates[j]+'_'+sitestr+'.png', bbox_inches='tight')
 		plt.close()
 		# plt.show()
 
