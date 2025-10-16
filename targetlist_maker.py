@@ -6,7 +6,7 @@ import warnings
 warnings.filterwarnings('ignore')
 
 if __name__ == '__main__':
-	datestr = '2025-06-26'
+	datestr = '2025-10-06'
 	namestr = 'KPIC'
 	# tgtnames = ['HD 35067',
 	# 			'HIP 19388',
@@ -38,7 +38,10 @@ if __name__ == '__main__':
 	tgtnames = ['HIP 81497',
 				'HIP 95771',
 				'TOI 1518',
-				'MASCARA-1']
+				'MASCARA-1',
+				'KELT-20',
+				'WASP-33',
+				'WASP-74']
 	colwidth = 16
 
 	sbad = Simbad()
