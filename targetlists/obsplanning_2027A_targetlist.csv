@@ -1,0 +1,3 @@
+Name,RA,Dec,Period (day),a (AU),T transit/inf conj (JD),KPIC obs status,Eccentric?,Kp max (km/s),Transiting?,Kmag (<9),e,omega,inc,Mpl,Rpl,Teq,Tstar,Rstar,People interested
+HD 2638,00:29:59.76,-05:54:43.86,3.458,0.044,2457948.482,No data,Yes,138.8,N,7.3,0.187,37.28,0,0.5,1.1,1123.328388,5200,0.88,Luke
+HD 86081,09:56:05.85,-03:48:30.08,2.1378431,0.0346,2463695.46,No data,Yes,175.9,N,7.3,0.0119,3,0,1.48,1.1,-3,6000,1.63,Luke

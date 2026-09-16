@@ -1,0 +1,4 @@
+Name,RA,Dec,Period (day),a (AU),T transit/inf conj (JD),Obs status,Eccentric?,Kp max (km/s),Transiting?,Kmag (<9),e,omega,inc
+Pr 0211,08:24:11.5,+19:16:37,2.1451,0.03176,2456013.9889,None,No,161,Y,10.17,0,0,0
+Pr 0201,08:41:43.8,+20:13:36.54,4.4264,0.06,2455992.861,None,No,147,Y,9.142,0,0,0
+HS Psc,01:37:23,+26:57:10,3.986,0.0435,2458486.422,None,No,119,Y,7.642,0,0,0

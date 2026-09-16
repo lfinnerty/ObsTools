@@ -1,0 +1,2 @@
+Name,RA,Dec,Period (day),a (AU),T transit/inf conj (JD),Obs status,Eccentric?,Kp max (km/s),Transiting?,Kmag (<9),e,omega,inc
+WASP-94 B b,20:55:09.19,-34:08:08.61,2.00839,0.0335,2456574.359,None,No,181,N,9.188,0,0,90

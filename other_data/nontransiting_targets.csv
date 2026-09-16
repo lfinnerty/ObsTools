@@ -1,0 +1,95 @@
+# This file was produced by the NASA Exoplanet Archive  http://exoplanetarchive.ipac.caltech.edu,,,,,,,,,,,,,,
+# Thu Sep 10 08:43:37 2026,,,,,,,,,,,,,,
+#,,,,,,,,,,,,,,
+# User preference: *,,,,,,,,,,,,,,
+#,,,,,,,,,,,,,,
+# CONSTRAINT:  where (pl_orbperstr < 5,,,,,,,,,,,,,,
+# CONSTRAINT:  and pl_bmassjstr > 0.2,,,,,,,,,,,,,,
+# CONSTRAINT:  and decstr > -10d,,,,,,,,,,,,,,
+# CONSTRAINT:  and sy_kmagstr < 10),,,,,,,,,,,,,,
+#,,,,,,,,,,,,,,
+# COLUMN pl_name:        Planet Name,,,,,,,,,,,,,,
+# COLUMN hostname:       Host Name,,,,,,,,,,,,,,
+# COLUMN default_flag:   Default Parameter Set,,,,,,,,,,,,,,
+# COLUMN sy_snum:        Number of Stars,,,,,,,,,,,,,,
+# COLUMN sy_pnum:        Number of Planets,,,,,,,,,,,,,,
+# COLUMN discoverymethod: Discovery Method,,,,,,,,,,,,,,
+# COLUMN disc_year:      Discovery Year,,,,,,,,,,,,,,
+# COLUMN disc_facility:  Discovery Facility,,,,,,,,,,,,,,
+# COLUMN soltype:        Solution Type,,,,,,,,,,,,,,
+# COLUMN pl_controv_flag: Controversial Flag,,,,,,,,,,,,,,
+# COLUMN pl_refname:     Planetary Parameter Reference,,,,,,,,,,,,,,
+# COLUMN pl_orbper:      Orbital Period [days],,,,,,,,,,,,,,
+# COLUMN pl_orbpererr1:  Orbital Period Upper Unc. [days],,,,,,,,,,,,,,
+# COLUMN pl_orbpererr2:  Orbital Period Lower Unc. [days],,,,,,,,,,,,,,
+# COLUMN pl_orbperlim:   Orbital Period Limit Flag,,,,,,,,,,,,,,
+# COLUMN pl_orbsmax:     Orbit Semi-Major Axis [au],,,,,,,,,,,,,,
+# COLUMN pl_orbsmaxerr1: Orbit Semi-Major Axis Upper Unc. [au],,,,,,,,,,,,,,
+# COLUMN pl_orbsmaxerr2: Orbit Semi-Major Axis Lower Unc. [au],,,,,,,,,,,,,,
+# COLUMN pl_orbsmaxlim:  Orbit Semi-Major Axis Limit Flag,,,,,,,,,,,,,,
+# COLUMN pl_rade:        Planet Radius [Earth Radius],,,,,,,,,,,,,,
+# COLUMN pl_radeerr1:    Planet Radius Upper Unc. [Earth Radius],,,,,,,,,,,,,,
+# COLUMN pl_radeerr2:    Planet Radius Lower Unc. [Earth Radius],,,,,,,,,,,,,,
+# COLUMN pl_radelim:     Planet Radius Limit Flag,,,,,,,,,,,,,,
+# COLUMN pl_radj:        Planet Radius [Jupiter Radius],,,,,,,,,,,,,,
+# COLUMN pl_radjerr1:    Planet Radius Upper Unc. [Jupiter Radius],,,,,,,,,,,,,,
+# COLUMN pl_radjerr2:    Planet Radius Lower Unc. [Jupiter Radius],,,,,,,,,,,,,,
+# COLUMN pl_radjlim:     Planet Radius Limit Flag,,,,,,,,,,,,,,
+# COLUMN pl_bmasse:      Planet Mass or Mass*sin(i) [Earth Mass],,,,,,,,,,,,,,
+# COLUMN pl_bmasseerr1:  Planet Mass or Mass*sin(i) [Earth Mass] Upper Unc.,,,,,,,,,,,,,,
+# COLUMN pl_bmasseerr2:  Planet Mass or Mass*sin(i) [Earth Mass] Lower Unc.,,,,,,,,,,,,,,
+# COLUMN pl_bmasselim:   Planet Mass or Mass*sin(i) [Earth Mass] Limit Flag,,,,,,,,,,,,,,
+# COLUMN pl_bmassj:      Planet Mass or Mass*sin(i) [Jupiter Mass],,,,,,,,,,,,,,
+# COLUMN pl_bmassjerr1:  Planet Mass or Mass*sin(i) [Jupiter Mass] Upper Unc.,,,,,,,,,,,,,,
+# COLUMN pl_bmassjerr2:  Planet Mass or Mass*sin(i) [Jupiter Mass] Lower Unc.,,,,,,,,,,,,,,
+# COLUMN pl_bmassjlim:   Planet Mass or Mass*sin(i) [Jupiter Mass] Limit Flag,,,,,,,,,,,,,,
+# COLUMN pl_bmassprov:   Planet Mass or Mass*sin(i) Provenance,,,,,,,,,,,,,,
+# COLUMN pl_orbeccen:    Eccentricity,,,,,,,,,,,,,,
+# COLUMN pl_orbeccenerr1: Eccentricity Upper Unc.,,,,,,,,,,,,,,
+# COLUMN pl_orbeccenerr2: Eccentricity Lower Unc.,,,,,,,,,,,,,,
+# COLUMN pl_orbeccenlim: Eccentricity Limit Flag,,,,,,,,,,,,,,
+# COLUMN pl_insol:       Insolation Flux [Earth Flux],,,,,,,,,,,,,,
+# COLUMN pl_insolerr1:   Insolation Flux Upper Unc. [Earth Flux],,,,,,,,,,,,,,
+# COLUMN pl_insolerr2:   Insolation Flux Lower Unc. [Earth Flux],,,,,,,,,,,,,,
+# COLUMN pl_insollim:    Insolation Flux Limit Flag,,,,,,,,,,,,,,
+# COLUMN pl_eqt:         Equilibrium Temperature [K],,,,,,,,,,,,,,
+# COLUMN pl_eqterr1:     Equilibrium Temperature Upper Unc. [K],,,,,,,,,,,,,,
+# COLUMN pl_eqterr2:     Equilibrium Temperature Lower Unc. [K],,,,,,,,,,,,,,
+# COLUMN pl_eqtlim:      Equilibrium Temperature Limit Flag,,,,,,,,,,,,,,
+# COLUMN ttv_flag:       Data show Transit Timing Variations,,,,,,,,,,,,,,
+# COLUMN st_refname:     Stellar Parameter Reference,,,,,,,,,,,,,,
+# COLUMN st_spectype:    Spectral Type,,,,,,,,,,,,,,
+# COLUMN st_teff:        Stellar Effective Temperature [K],,,,,,,,,,,,,,
+# COLUMN st_tefferr1:    Stellar Effective Temperature Upper Unc. [K],,,,,,,,,,,,,,
+# COLUMN st_tefferr2:    Stellar Effective Temperature Lower Unc. [K],,,,,,,,,,,,,,
+# COLUMN st_tefflim:     Stellar Effective Temperature Limit Flag,,,,,,,,,,,,,,
+# COLUMN st_rad:         Stellar Radius [Solar Radius],,,,,,,,,,,,,,
+# COLUMN st_raderr1:     Stellar Radius Upper Unc. [Solar Radius],,,,,,,,,,,,,,
+# COLUMN st_raderr2:     Stellar Radius Lower Unc. [Solar Radius],,,,,,,,,,,,,,
+# COLUMN st_radlim:      Stellar Radius Limit Flag,,,,,,,,,,,,,,
+pl_name,Known outer companion?,Inclination constraint?,Existing data?,Atmosphere notes,pl_orbper,pl_bmassj,st_spectype,st_teff,st_rad,st_mass,st_logg,rastr,decstr,sy_kmag
+ups And b,Yes,No,No,,4.617111,0.69,F8 V,6089,1.64,1.31,4.25,01h36m47.60s,+41d24m13.73s,2.859
+tau Boo b,Yes,Yes,Many,Done,3.3128,3.87,F7 V,6450,,1.2,4.3,13h47m15.23s,+17d27m25.79s,3.507
+51 Peg b,Maybe,Controversial,"KPIC, others",Lots of data,4.230785,0.472,,5758,1.17561,1.03,4.31038,22h57m28.21s,+20d46m08.74s,3.911
+HD 143105 b,No,Yes,KPIC,Done,2.1974,1.21,F5,6380,,1.51,4.37,15h53m36.57s,+68d43m11.92s,5.519
+HD 46375 b,Yes,No,KPIC,,3.023495,0.2266,,5264.38,0.914196,0.932831,4.485321,06h33m12.74s,+05d27m45.03s,6
+HD 102195 b,No,Yes,"KPIC, GIANO",New paper in prep,4.079,0.49,K0 V,,,0.92,,11h45m42.10s,+02d49m15.57s,6.151
+HD 88133 b,No,No,KPIC,,3.414884,0.2845,,5392,2.2,1.26,3.88,10h10m07.66s,+18d11m08.62s,6.199
+HIP 86221 b,"Yes (close, need fiber)",No,KPIC,,2.224,0.71,K5 V,,,0.79,,17h37m10.77s,+27d53m47.01s,6.302
+HD 187123 b,Outer planet (4.5 AU),No,No,,3.097,0.52,G3 V,5830,,1,,19h46m58.29s,+34d25m08.36s,6.337
+HD 149143 b,No,No,KPIC,,4.072,1.69,,6013,1.63,1.73,4.25,16h32m51.04s,+02d05m04.04s,6.434
+HD 103720 b,No,No,No,Old ephem,4.5557,0.62,K3 V,5017,0.73,0.794,4.43,11h56m41.12s,-02d46m44.90s,7.283
+HD 86081 b,Yes,No,No,Old ephem,2.1375,1.64,,6018,1.58,1.39,4.18,09h56m05.85s,-03d48m30.08s,7.299
+HD 2638 b,Yes (triple?),No,No,Old ephem,3.458,0.5,K1 V,,,0.92,,00h29m59.76s,-05d45m53.86s,7.308
+DMPP-7 b,No,No,No,New discovery,4.92666,0.21696613,,6096,1.49,1.23,4.17,13h34m06.83s,+00d29m55.73s,7.386
+HS Psc b,No,No,No,"New discovery, young system",3.986,1.46,K7 V,4203,0.65,0.69,4.66,01h37m23.37s,+26d57m10.09s,7.642
+Pr0201 b,No,No,No,Open cluster,4.4264,0.54,,6174,1.15,1.24,4.41,08h41m43.78s,+20d13m36.54s,9.142
+,,,,,,,,,,,,,,
+,,,,,,,,,,,,,,
+,,,,,,,,,,,,,,
+,,,,,,,,,,,,,,
+ups And b,Yes,No,No,,4.617111,0.69,F8 V,6089,1.64,1.31,4.25,01h36m47.60s,+41d24m13.73s,2.859
+HD 46375 b,Yes,No,KPIC,,3.023495,0.2266,,5264.38,0.914196,0.932831,4.485321,06h33m12.74s,+05d27m45.03s,6
+HIP 86221 b,"Yes (close, need fiber)",No,KPIC,,2.224,0.71,K5 V,,,0.79,,17h37m10.77s,+27d53m47.01s,6.302
+HD 86081 b,Yes,No,No,Old ephem,2.1375,1.64,,6018,1.58,1.39,4.18,09h56m05.85s,-03d48m30.08s,7.299
+HD 2638 b,Yes (triple?),No,No,Old ephem,3.458,0.5,K1 V,,,0.92,,00h29m59.76s,-05d45m53.86s,7.308

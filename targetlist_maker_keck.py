@@ -6,7 +6,7 @@ import warnings
 warnings.filterwarnings('ignore')
 
 if __name__ == '__main__':
-	datestr = '2025-09-30'
+	datestr = '2025-11-12'
 	namestr = 'KPIC'
 	# tgtnames = ['HD 35067',
 	# 			'HIP 19388',
@@ -41,7 +41,12 @@ if __name__ == '__main__':
 				'MASCARA-1',
 				'KELT-20',
 				'WASP-33',
-				'WASP-74']
+				'WASP-74',
+				'51 Peg',
+				'HD 46375',
+				'55 Cnc',
+				'GJ 436',
+				'WASP-127']
 	# tgtnames = [
 	# #HJ_Targets
 	# 'HAT-P-10',

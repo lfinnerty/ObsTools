@@ -1,0 +1,4 @@
+Name,RA,Dec,Period (day),a (AU),T transit/inf conj (JD),KPIC obs status,Eccentric?,Kp max (km/s),Transiting?,Kmag (<9),e,omega,inc,Mpl,Rpl,Teq,Tstar,Rstar,People interested
+HD 189733,20:00:43,22:42:39,2.218574804,0.031,2459770.41,KPIC detected,No,152.4,Y,5.5,0,0,,0,0,0,0,0,Luke
+HD209458,22:03:11,18:53:03,3.524740459,0.046,2459826.781,2024A (Luke) 2024B (Luke L),No,142.4,Y,6.3,0,0,0,0.68,1.4,1480.150428,6050,1.18,Luke
+WASP-189,15:02:45,-3:01:53,2.7240308,0.05053,2456706.457,KPIC detected,No,202.3,Y,6,0,0,,0,0,0,0,0,Luke

@@ -15,13 +15,13 @@ def make_line(refnumber, targetname, ra, dec, eq, RApm, decPM, rot_angle='0.0',
 	return line
 
 if __name__ == '__main__':
-	datestr = '2025-09-29'
-	namestr = 'winered'
-	tgtnames = ['WASP-74',
-				'WASP-94B',
-				'WASP-18',
-				'WASP-77A',
-				'WASP-121']
+	datestr = '2026-06-23'
+	namestr = 'lfinnerty_winered'
+	tgtnames = ['WASP-167',
+				'WASP-103',
+				'MASCARA-1',
+				'HD 202772',
+				]
 	
 
 	hdr = "\n###".join(("""# RA Dec equinox RApm Decpm offset rot RA_probe1 Dec_probe1 equinox RA_probe2 Dec_probe2 equinox pm_epoch""",
