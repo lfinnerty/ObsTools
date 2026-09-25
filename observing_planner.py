@@ -108,8 +108,7 @@ if __name__ == '__main__':
 				# print(phase0)
 				phase0-=int(phase0[0])
 				# print(phase0)
-				phis = np.sin(phase0*2*np.pi)
-				kps = kp*np.sin(phis)
+				kps = kp*np.sin(phase0*2*np.pi)
 				# print(kps)
 			else:
 				omega = objects[i][12]*np.pi/180.
