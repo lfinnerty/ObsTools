@@ -42,11 +42,21 @@ if __name__ == '__main__':
 	parser = argparse.ArgumentParser()
 	parser.add_argument('site')
 	parser.add_argument('instrument')
+	parser.add_argument('--date', help='single HST date (YYYY-MM-DD)')
 	parser.add_argument('--start-date', help='first HST date (YYYY-MM-DD)')
 	parser.add_argument('--end-date', help='last HST date (YYYY-MM-DD)')
+	parser.add_argument(
+		'--require-conjunction',
+		action='store_true',
+		help='only plot targets whose observed velocity crosses conjunction',
+	)
 	args = parser.parse_args()
+	if args.date is not None and (args.start_date is not None or args.end_date is not None):
+		parser.error('--date cannot be combined with --start-date or --end-date')
 	if (args.start_date is None) != (args.end_date is None):
 		parser.error('--start-date and --end-date must be provided together')
+	if args.date is None and args.start_date is None:
+		parser.error('provide --date or both --start-date and --end-date')
 
 	site = args.site
 	if site.upper() in ['KECK', 'GEMINI-N', 'MKO']:
@@ -69,7 +79,9 @@ if __name__ == '__main__':
 	### hardcode dates if you want them
 	# hstdates = ['2027-06-24']
 	# hstdates = ['2027-01-21', '2027-01-12']
-	if args.start_date is not None:
+	if args.date is not None:
+		hstdates = generate_hstdates(args.date, args.date)
+	else:
 		hstdates = generate_hstdates(args.start_date, args.end_date)
 
 	dates = []
@@ -103,7 +115,7 @@ if __name__ == '__main__':
 			kp = objects[i][8] 
 			t0 = objects[i][5]
 
-			if objects[i][7] == 'No':
+			if objects[i][7] in ['No', 'N']:
 				phase0 = (dates[j].jd - t0)/period
 				# print(phase0)
 				phase0-=int(phase0[0])
@@ -133,9 +145,9 @@ if __name__ == '__main__':
 				
 				### Minimum Kp shift - bigger if non-transiting. Also figure out when transit is to mask it
 				if objects[i][9] == 'N':
-					delta_Kp_min = 60.
+					delta_Kp_min = 30.
 				else:
-					delta_Kp_min = 60.
+					delta_Kp_min = 30.
 					### Set eclipse to 0 for duration
 					# transit_kp = kp*np.sin(Rs/a)
 					# kps[np.abs(kps)<transit_kp] = 0.
@@ -144,30 +156,27 @@ if __name__ == '__main__':
 				### Check Kp decreases (i.e. between 0.25 and 0.75 in phase)
 				kp_decreasing = kpclean[-1] < kpclean[0]
 
-				### This requires the planet is observed through conjunction
-				if kpclean[0] < 0:
-					kp_decreasing = False
-				if kpclean[-1] > 0:
-					kp_decreasing = False
-
-				# delta_Kp_min = 0.
-				# kp_decreasing = True
-
 
 				if (np.abs(kpmax - kpmin)) > delta_Kp_min and kp_decreasing:
 					# if objects[i][0] in ['WASP-121']:
-					print('Making plot')	
+					# print('Making plot')	
 					ax[0].plot(uttimes.value[objaltaz.alt>0*u.deg], objaltaz.secz[objaltaz.alt>0*u.deg], label=objects[i][0])
 					### Figure out when it's actually above site limits
 					abovehorizon = objaltaz.alt.value>15
 					rising = np.diff(objaltaz.alt.value, prepend=0) > 0
 					overlimit = objaltaz.alt.value>15#38.
 					inds = np.isfinite(kps) & abovehorizon & (rising | overlimit) 
-					if kps[inds][0] > 0 and kps[inds][-1] < 0:
-						### Only plot if it crosses through conjunction
+					if (not args.require_conjunction):
 						ax[1].plot(uttimes.value[inds], kps[inds], label=objects[i][0])
 						ax[1].text(uttimes.value[inds][-1], kps[inds][-1], objects[i][0])
 						nobj+=1
+					elif args.require_conjunction:
+						if kps[inds][0] > 0 and kps[inds][-1] < 0:
+							ax[1].plot(uttimes.value[inds], kps[inds], label=objects[i][0])
+							ax[1].text(uttimes.value[inds][-1], kps[inds][-1], objects[i][0])
+							nobj+=1
+					if nobj == 1:
+						print('Making plot for', hstdates[j], 'at', sitestr)
 		### overlay sun
 		ax[0].plot(uttimes.value, sunaltaz.secz, color='y', label='Sun')
 		### And moon
@@ -179,8 +188,8 @@ if __name__ == '__main__':
 		ax[1].fill_between(uttimes.value, -300,300, sunaltaz.alt < -0*u.deg, color='0.8', zorder=0) 
 		ax[1].fill_between(uttimes.value, -300,300, sunaltaz.alt < -18*u.deg, color='0.6', zorder=0) 
 		ax[1].axhline(0,color='k',linestyle='--')
-		ax[0].axhline(1./np.cos((90-18)*np.pi/180.), color='r', linestyle='--', label='Rising limit')
-		ax[0].axhline(1./np.cos((90-38)*np.pi/180.), color='r', linestyle='-.', label='Setting limit')
+		# ax[0].axhline(1./np.cos((90-18)*np.pi/180.), color='r', linestyle='--', label='Rising limit')
+		# ax[0].axhline(1./np.cos((90-38)*np.pi/180.), color='r', linestyle='-.', label='Setting limit')
 		ax[0].xaxis.set_major_locator(ticker.FixedLocator(np.arange(hours[0],hours[-1]+0.01,1)))
 		ax[1].xaxis.set_major_locator(ticker.FixedLocator(np.arange(hours[0],hours[-1]+0.01,1)))
 
