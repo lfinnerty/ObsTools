@@ -6,8 +6,8 @@ import warnings
 warnings.filterwarnings('ignore')
 
 if __name__ == '__main__':
-	datestr = '2025-11-12'
-	namestr = 'KPIC'
+	datestr = '2027A'
+	namestr = 'HIRES'
 	# tgtnames = ['HD 35067',
 	# 			'HIP 19388',
 	# 			'HIP 81497',
@@ -35,18 +35,32 @@ if __name__ == '__main__':
 	# 			'HIP16322',
 	# 			'DH Tau',
 	# 			'HIP18717']
-	tgtnames = ['HIP 81497',
-				'HIP 95771',
-				'TOI 1518',
-				'MASCARA-1',
-				'KELT-20',
-				'WASP-33',
-				'WASP-74',
-				'51 Peg',
+	# tgtnames = ['HIP 81497',
+	# 			'HIP 95771',
+	# 			'TOI 1518',
+	# 			'MASCARA-1',
+	# 			'KELT-20',
+	# 			'WASP-33',
+	# 			'WASP-74',
+	# 			'51 Peg',
+	# 			'HD 46375',
+	# 			'55 Cnc',
+	# 			'GJ 436',
+	# 			'WASP-127']
+	tgtnames = ['HD 143105',
+				'HD 102956',
+				'HD 103774',
 				'HD 46375',
-				'55 Cnc',
-				'GJ 436',
-				'WASP-127']
+				'HD 102195',
+				'HD 88133',
+				'HIP 86221',
+				'HD 149143',
+				'HIP 91258',
+				'HD 103720',
+				'HD 86081',
+				'HD 2638',
+				'HS Psc',
+				'HD 285507']
 	# tgtnames = [
 	# #HJ_Targets
 	# 'HAT-P-10',

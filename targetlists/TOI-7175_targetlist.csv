@@ -1,0 +1,2 @@
+Name,RA,Dec,Period (day),a (AU),T transit/inf conj (JD),Obs status,Eccentric?,Kp max (km/s),Transiting?,Kmag (<9),e,omega,inc
+TOI-7175 b,23:45:15.93,+53:45:02.8,2.9944941,0.0487,2460607.53278,None,No,177,Y,8.976,0,0,
