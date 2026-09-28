@@ -16,7 +16,8 @@ from .workspace import subdir
 
 AU_PER_DAY_TO_KM_S = 1731.45683633
 EXOARCHIVE_COLUMNS = ('hostname,pl_name,ra,dec,pl_orbper,pl_orbsmax,pl_tranmid,'
-                      'pl_orbeccen,pl_orblper,pl_orbincl,sy_kmag,tran_flag')
+                      'pl_orbeccen,pl_orblper,pl_orbincl,sy_kmag,tran_flag,pl_trandur')
+T14_COLUMN = 'T14 (h)'  # transit duration from the archive (pl_trandur), used by `transits --duration-column`
 
 
 def _cached(kind, key, query, workspace=None, refresh=False, log=print):
@@ -95,7 +96,8 @@ def exoarchive_target(row, circular_below=0.):
         name=_value(row, 'pl_name'), ra=ra, dec=dec, period=per, t0=_value(row, 'pl_tranmid'), kp_max=kp,
         a_au=a, status='None', eccentric=e is not None and float(e) > 0,
         transiting=_value(row, 'tran_flag') == 1, kmag=kmag if kmag is not None else math.nan,
-        e=e if e is not None else 0., omega=_value(row, 'pl_orblper'), inc=_value(row, 'pl_orbincl'))
+        e=e if e is not None else 0., omega=_value(row, 'pl_orblper'), inc=_value(row, 'pl_orbincl'),
+        extra={T14_COLUMN: _value(row, 'pl_trandur') if _value(row, 'pl_trandur') is not None else ''})
 
 
 def query_tic(tic_ids, workspace=None, refresh=False, log=print):

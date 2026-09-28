@@ -1,5 +1,17 @@
 # Changelog
 
+## Unreleased
+
+- `targetlist archive` also writes the archive's transit duration (`pl_trandur`) as a
+  `T14 (h)` column, for `transits --duration-column "T14 (h)"`.
+- `hrccs-plan transits`: rank transit windows, i.e. the transit (T14) plus an out-of-transit
+  baseline (`--baseline`, split around the transit or `--baseline-mode any`). The whole window
+  must be at night and above `--alt-min`; the S/N counts the in-transit time weighted by
+  airmass. The command supports `--gemini-tw`, CSV/text output and per-target files.
+- `windows --gemini-tw FILE`: write the ranked windows as Gemini PIT timing windows
+  (`YYYY-MM-DD HH:MM:SS H:MM`, UT start and duration, one block per target) for the proposal's
+  Scheduling field; `--tw-round` sets the rounding (default 15 minutes).
+
 ## 0.1.0 — ObsTools becomes `hrccs_planner`
 
 The scripts are now an installable package (`pip install -e .`) with one command-line

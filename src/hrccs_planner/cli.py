@@ -4,6 +4,7 @@
     hrccs-plan sites                       list the built-in sites
     hrccs-plan nights LIST --site S ...    nightly airmass / planet-velocity plots
     hrccs-plan windows LIST --site S ...   rank observing windows for dayside emission
+    hrccs-plan transits LIST --site S ...  rank transit windows (transit + baseline)
     hrccs-plan ephemeris LIST --date D     orbital phase and its uncertainty on a date
     hrccs-plan targetlist archive NAME ... target list from the NASA Exoplanet Archive
     hrccs-plan catalog tic ID ...          TIC coordinates and magnitudes
@@ -82,6 +83,48 @@ def cmd_windows(args, parser):
                 files = write_windows(split_path(out, name), sub,
                                       f'{name}: {len(sub)} windows (relative S/N normalized to {norm})')
                 print('Saved', ' and '.join(files))
+    _write_gemini_tw(args, rows, 'output/best_windows')
+
+
+def cmd_transits(args, parser):
+    from .transits import TransitOptions, rank_transits, table_lines, write_transits
+    from .windows import split_path
+    targets = read_targets(resolve_targetlist(args.targetlist, args.workspace))
+    if args.duration is None and args.duration_column is None:
+        parser.error('give the transit duration: --duration HOURS, or --duration-column COLUMN')
+    opts = TransitOptions(
+        duration=args.duration, duration_column=args.duration_column, baseline=args.baseline,
+        baseline_mode=args.baseline_mode, alt_min=args.alt_min, twilight=args.twilight,
+        bright_threshold=args.bright_threshold, moon_sep_min=args.moon_sep_min, weight_kmag=args.weight_kmag,
+        contrast_column=args.contrast_column if args.weight_contrast else None, airmass_k=args.airmass_k,
+        seeing_exponent=args.seeing_exponent, normalize_per_target=args.normalize_per_target,
+        snr_min=args.snr_min, sort=args.sort, top=args.top)
+    rows, n_all = rank_transits(targets, get_site(args.site), _dates(args, parser), opts)
+    first = (f'{len(rows)} of {n_all} transit windows with relative S/N >= {args.snr_min} '
+             f'(baseline {args.baseline:g} h, {args.baseline_mode})')
+    print('\n'.join(table_lines(rows, first)))
+    if args.csv:
+        out = output_path(args.csv, 'output/transit_windows', args.workspace)
+        print('Saved', ' and '.join(write_transits(out, rows, first)))
+        if args.split_targets:
+            norm = "this target's best window" if args.normalize_per_target else 'the best window of all targets'
+            for name in dict.fromkeys(r['name'] for r in rows):
+                sub = [r for r in rows if r['name'] == name]
+                print('Saved', ' and '.join(write_transits(split_path(out, name), sub,
+                                                           f'{name}: {len(sub)} transit windows (relative S/N normalized to {norm})')))
+    _write_gemini_tw(args, rows, 'output/transit_windows')
+
+
+def _write_gemini_tw(args, rows, kind):
+    if not args.gemini_tw:
+        return
+    from .windows import gemini_timing_windows
+    out = output_path(args.gemini_tw, kind, args.workspace)
+    text = gemini_timing_windows(rows, args.tw_round)
+    with open(out, 'w') as fh:
+        fh.write(text)
+    print(f'\nGemini PIT timing windows (paste into the Scheduling field), saved to {out}:\n')
+    print(text, end='')
 
 
 def cmd_nights(args, parser):
@@ -122,7 +165,7 @@ def cmd_targetlist_archive(args, parser):
     name = name[:-4] if name.endswith('.csv') else name
     name = name[:-11] if name.endswith('_targetlist') else name
     out = output_path(name + '_targetlist.csv', 'targetlists', args.workspace)
-    write_targets(out, [exoarchive_target(r, args.circular_below) for r in rows], extra_columns=[])
+    write_targets(out, [exoarchive_target(r, args.circular_below) for r in rows])
     print(f'Wrote {len(rows)} planet(s) to {out}')
 
 
@@ -195,7 +238,41 @@ def build_parser():
     p.add_argument('--top', type=int, help='keep only the top N windows')
     p.add_argument('--csv', help='save the windows to this CSV (in <workspace>/output/best_windows/ unless a directory is given), and the table to the same name with .txt')
     p.add_argument('--split-targets', action='store_true', help='with --csv, also write one CSV/.txt per target (<csv>_<target>.csv)')
+    p.add_argument('--gemini-tw', metavar='FILE', help='also write the windows as Gemini PIT timing windows (UT start and duration per line, one block per target) for the proposal Scheduling field (in <workspace>/output/best_windows/ unless a directory is given)')
+    p.add_argument('--tw-round', type=int, default=15, metavar='MIN', help='round timing-window starts down and ends up to MIN minutes (default 15; 0 for exact minutes)')
     p.set_defaults(func=cmd_windows)
+
+    p = sub.add_parser('transits', parents=[common], help='rank transit windows (transit + out-of-transit baseline)',
+                       description='Rank transit windows for transmission HRCCS: the transit (T14) plus an '
+                                   'out-of-transit baseline, all at night and above --alt-min. The S/N counts the '
+                                   'in-transit time weighted by airmass. See docs/method.md.')
+    p.add_argument('targetlist', help='target-list name (<workspace>/targetlists/<name>_targetlist.csv) or path')
+    p.add_argument('--site', required=True, help='site, telescope or instrument (hrccs-plan sites)')
+    _add_dates(p, single=False)
+    p.add_argument('--duration', type=float, help='transit duration T14 [h], first to fourth contact, for all targets')
+    p.add_argument('--duration-column', help="target-list column with T14 [h] (overrides --duration where filled; 'T14 (h)' is written by targetlist archive)")
+    p.add_argument('--baseline', type=float, default=2., help='total out-of-transit baseline [h] (default 2)')
+    p.add_argument('--baseline-mode', choices=['split', 'any'], default='split',
+                   help='split: half the baseline before and half after the transit (default); '
+                        'any: any division, including all on one side (the most even one that fits is used)')
+    p.add_argument('--alt-min', type=float, default=30., help='minimum altitude [deg] throughout the window (default 30, airmass 2)')
+    p.add_argument('--twilight', type=float, default=-18., help='Sun altitude defining night [deg] (default -18)')
+    p.add_argument('--bright-threshold', type=float, default=0.5, help='Moon illumination above which a night is bright time (default 0.5)')
+    p.add_argument('--moon-sep-min', type=float, default=10., help='minimum target-Moon separation [deg] (default 10)')
+    p.add_argument('--weight-kmag', action='store_true', help='weight S/N by 10^(-0.2 (Kmag - 6)); targets without Kmag are skipped')
+    p.add_argument('--weight-contrast', action='store_true', help='weight S/N by the value in --contrast-column (e.g. an expected transmission signal)')
+    p.add_argument('--contrast-column', default='K contrast (ppm)', help="column used by --weight-contrast (default 'K contrast (ppm)')")
+    p.add_argument('--airmass-k', type=float, default=0., help='extinction [mag/airmass] in the in-transit airmass weight on S/N^2 (default 0)')
+    p.add_argument('--seeing-exponent', type=float, default=0., help='slit-loss weight X^(-p) on S/N^2 (default 0; 0.6 for seeing wider than the slit)')
+    p.add_argument('--normalize-per-target', action='store_true', help="normalize S/N to each target's own best window")
+    p.add_argument('--snr-min', type=float, default=0.3, help='drop windows with relative S/N below this (default 0.3)')
+    p.add_argument('--sort', choices=['moon', 'snr'], default='moon', help='moon: bright time first, then S/N (default); snr: by S/N only')
+    p.add_argument('--top', type=int, help='keep only the top N windows')
+    p.add_argument('--csv', help='save to this CSV (in <workspace>/output/transit_windows/ unless a directory is given) and the table to .txt')
+    p.add_argument('--split-targets', action='store_true', help='with --csv, also write one CSV/.txt per target')
+    p.add_argument('--gemini-tw', metavar='FILE', help='also write the windows (transit + baseline) as Gemini PIT timing windows for the proposal Scheduling field')
+    p.add_argument('--tw-round', type=int, default=15, metavar='MIN', help='round timing-window starts down and ends up to MIN minutes (default 15; 0 for exact)')
+    p.set_defaults(func=cmd_transits)
 
     p = sub.add_parser('nights', parents=[common], help='nightly airmass and planet-velocity plots',
                        description='Plot, for each night, the airmass and planet velocity of every target '

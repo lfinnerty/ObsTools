@@ -227,6 +227,37 @@ def write_windows(path, rows, first, command=None):
     return [path, os.path.splitext(path)[0] + '.txt']
 
 
+def gemini_timing_windows(rows, round_minutes=15):
+    """Gemini PIT Scheduling-field text: one block per target,
+
+        TW for <target>
+        --------------------------------------------
+        YYYY-MM-DD HH:MM:SS H:MM        (UT start, duration)
+
+    with windows in time order. With round_minutes > 0 the start is rounded down
+    and the end up to a multiple of round_minutes, so each window covers the
+    whole usable time."""
+    from datetime import datetime, timedelta
+    blocks = []
+    for name in dict.fromkeys(r['name'] for r in rows):
+        lines = []
+        for r in sorted((r for r in rows if r['name'] == name), key=lambda r: (r['date'], r['ut0'])):
+            base = datetime.fromisoformat(r['date']) + timedelta(hours=23, minutes=59, seconds=59)
+            t0 = base + timedelta(hours=float(r['ut0']))
+            t1 = base + timedelta(hours=float(r['ut1']))
+            # nearest minute (the time grid is offset by 1 s from whole minutes)
+            t0, t1 = [(t + timedelta(seconds=30)).replace(second=0, microsecond=0) for t in (t0, t1)]
+            if round_minutes:
+                step = timedelta(minutes=round_minutes)
+                t0 -= (t0 - t0.replace(hour=0, minute=0)) % step
+                rem = (t1 - t1.replace(hour=0, minute=0)) % step
+                t1 += (step - rem) if rem else timedelta(0)
+            minutes = int(round((t1 - t0).total_seconds() / 60.))
+            lines.append(f'{t0:%Y-%m-%d %H:%M:%S} {minutes // 60}:{minutes % 60:02d}')
+        blocks.append('\n'.join([f'TW for {name}', '-' * 44] + lines))
+    return '\n\n'.join(blocks) + '\n'
+
+
 def split_path(path, name):
     stem, ext = os.path.splitext(path)
     return f"{stem}_{re.sub(r'[^A-Za-z0-9]', '', name)}{ext}"
