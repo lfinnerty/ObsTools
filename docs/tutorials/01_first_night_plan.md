@@ -67,4 +67,35 @@ WASP-189 b and τ Boo b are observable early in the night.
   [tutorial 4](04_nontransiting.md).
 - `--outdir DIR`: write the plots somewhere other than `<workspace>/plots`.
 
+## Shading the observing window, and a compact figure for proposals
+
+`--shade CSV` shades the windows from a `hrccs-plan windows` or `hrccs-plan transits` CSV on
+the matching nights and targets. A bare file name is looked up in
+`<workspace>/output/best_windows/` and `output/transit_windows/`. `--window HH:MM-HH:MM` shades
+a window you give by hand, in UT.
+
+`--compact` makes a small figure (6.4 × 5.2 inches, 300 dpi) for proposals and papers:
+
+- a shared UT axis covering the night only;
+- airmass increasing downward, with the airmass-2 limit marked;
+- the Moon drawn only above the horizon;
+- each planet's velocity drawn thicker inside its window;
+- transits, from a `transits` CSV, shaded darker than their baseline.
+
+`--format pdf` writes a vector file, and `--title`/`--site-label` set the title.
+
+```bash
+hrccs-plan nights TOI-1408b --site gemini-n --date 2027-07-22 --inclination 82.4 \
+    --shade best_windows_TOI-1408b_IGRINS_2027A_am.csv --compact --site-label "Gemini North" --format pdf
+```
+
+![Compact night plan with the observing window shaded](../images/nights_compact_example.png)
+
+For a multi-planet system, `--show-all` plots every planet that is up (skipping the dayside and
+velocity criteria). Planets of the same star share one airmass curve, labelled with the star
+(`TOI-1408A`), and each planet gets its own velocity curve.
+
+Targets with a shaded window on a night are always plotted, even if they would otherwise be
+left out. This is needed for transits, which happen on the night side of the orbit.
+
 Next, [tutorial 2](02_targetlists.md) shows how to build your own target list.

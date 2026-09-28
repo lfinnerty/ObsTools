@@ -2,6 +2,13 @@
 
 ## Unreleased
 
+- `nights`: planets of the same star share one airmass curve, labelled with the star (e.g.
+  `TOI-1408A`) when several are shown; `--show-all` plots every planet that is up, skipping the
+  dayside/velocity criteria (e.g. both TOI-1408 b and c).
+- `nights --shade CSV` / `--window HH:MM-HH:MM`: shade observing windows (and the transit itself,
+  for `transits` CSVs) on the nightly plots. Targets with a shaded window are always shown.
+- `nights --compact`: a small publication-style figure (`--format pdf|svg|png`, `--title`,
+  `--site-label`).
 - `targetlist archive` also writes the archive's transit duration (`pl_trandur`) as a
   `T14 (h)` column, for `transits --duration-column "T14 (h)"`.
 - `hrccs-plan transits`: rank transit windows, i.e. the transit (T14) plus an out-of-transit
