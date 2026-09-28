@@ -1,0 +1,17 @@
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+build/
+dist/
+.pytest_cache/
+.ruff_cache/
+
+# Workspace contents: keep target lists, starlists and outputs in a separate
+# workspace directory ($HRCCS_WORKSPACE), not in the package repository
+/targetlists/
+/starlists/
+/output/
+/plots/
+/cache/
+/other_data/

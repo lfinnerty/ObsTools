@@ -1,0 +1,47 @@
+[build-system]
+requires = ["setuptools>=64"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "hrccs_planner"
+version = "0.1.0"
+description = "Observation planning for high-resolution cross-correlation spectroscopy (HRCCS) of exoplanet atmospheres"
+readme = "README.md"
+license = {file = "LICENSE"}
+authors = [{name = "Luke Finnerty"}]
+requires-python = ">=3.9"
+dependencies = [
+    "numpy>=1.22",
+    "astropy>=5.0",
+    "astroquery>=0.4.8",
+    "matplotlib>=3.5",
+]
+classifiers = [
+    "Programming Language :: Python :: 3",
+    "Topic :: Scientific/Engineering :: Astronomy",
+]
+
+[project.optional-dependencies]
+dev = ["pytest>=7", "ruff"]
+
+[project.scripts]
+hrccs-plan = "hrccs_planner.cli:main"
+
+[project.urls]
+Source = "https://github.com/lfinnerty/ObsTools"
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.setuptools.package-data]
+hrccs_planner = ["data/targetlists/*.csv"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+
+[tool.ruff]
+line-length = 120
+
+[tool.ruff.lint]
+select = ["E", "F", "W", "I", "B"]
+ignore = ["E501", "E731"]

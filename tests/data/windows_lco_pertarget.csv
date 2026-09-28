@@ -1,0 +1,2 @@
+rank,hst_date,target,moon,illum,usable_hrs,ut_start,ut_end,phase_start,phase_end,v_start,v_end,delta_v,f_pl,rel_snr,crosses_eclipse,airmass_mean,airmass_max
+1,2027-01-05,WASP-76 b,dark,0.03,1.28,1.33,2.60,0.412,0.442,103.5,71.0,32.5,0.906,1.000,N,1.506,1.741
