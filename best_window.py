@@ -1,13 +1,19 @@
 import numpy as np
 import argparse
 import csv
+import os
+import re
+import sys
 import warnings
 from datetime import datetime, timedelta
 from astropy import units as u
 from astropy.time import Time
 from astropy.coordinates import SkyCoord, EarthLocation, AltAz, get_sun, get_body
+from numpy.lib.stride_tricks import sliding_window_view
 
 warnings.filterwarnings('ignore')
+
+OUTPUT_DIR = 'output/best_windows'
 
 ### Rank nights for dayside emission HRCCS of circular-orbit planets.
 ### Usable time: target above alt_min, sun below -18 deg (no astronomical twilight),
@@ -22,6 +28,15 @@ warnings.filterwarnings('ignore')
 ### f = (sin(a) + (pi - a) cos(a))/pi, with phase angle a = pi |1 - 2 phase|
 ### (a = 0 at secondary eclipse), and a matched-filter sum over exposures gives
 ### S/N ~ sqrt(sum(f^2 dt) * delta v), normalized to the best night.
+### With --max-hours, each night's window is limited to that much wall-clock time (for
+### targets that do not need the whole night): the contiguous stretch of at most that
+### length, within the usable time, that maximizes sum(f^2 dt) * delta v is used.
+### With --airmass-k and/or --seeing-exponent, each exposure is also weighted by the airmass X
+### (photon-noise limited, so the weight multiplies S/N^2): atmospheric extinction
+### 10^(-0.4 k (X-1)) with k in mag/airmass, and slit losses for seeing FWHM ~ X^0.6 wider
+### than the slit, (1/X)^p with p = --seeing-exponent. The 4 h cap uses the same weights.
+### --csv files without a directory are written to OUTPUT_DIR, together with a .txt copy
+### of the printed table; --split-targets also writes one file per target.
 
 
 def generate_hstdates(start_date, end_date):
@@ -39,6 +54,28 @@ def generate_hstdates(start_date, end_date):
 	return hstdates
 
 
+def best_subwindow(usable, w2, vpl, nmax):
+	"""Mask of the stretch of at most nmax consecutive samples that maximizes
+	sum(w2 over usable samples) * (planet velocity range over usable samples),
+	where w2 is the per-sample S/N^2 weight (phase curve f^2 x airmass weight)."""
+	idx = np.flatnonzero(usable)
+	i0, i1 = idx[0], idx[-1]+1
+	if i1-i0 <= nmax:
+		return usable
+	u = usable[i0:i1]
+	f2 = np.where(u, w2[i0:i1], 0.)
+	v = np.where(u, vpl[i0:i1], np.nan)
+	eff = sliding_window_view(f2, nmax).sum(axis=1)
+	vw = sliding_window_view(v, nmax)
+	with warnings.catch_warnings():
+		warnings.simplefilter('ignore', RuntimeWarning)
+		dv = np.nan_to_num(np.nanmax(vw, axis=1) - np.nanmin(vw, axis=1))
+	k = np.argmax(eff*dv)
+	out = np.zeros_like(usable)
+	out[i0+k:i0+k+nmax] = u[k:k+nmax]
+	return out
+
+
 if __name__ == '__main__':
 	parser = argparse.ArgumentParser()
 	parser.add_argument('site')
@@ -51,11 +88,15 @@ if __name__ == '__main__':
 	parser.add_argument('--bright-threshold', type=float, default=0.5, help='moon illumination at local midnight above which a night is bright time')
 	parser.add_argument('--top', type=int, default=None, help='only print the top N nights')
 	parser.add_argument('--moon-sep-min', type=float, default=10., help='minimum target-moon separation (deg) while the target is up at night')
-	parser.add_argument('--csv', default=None, help='save the ranked windows to this CSV file')
+	parser.add_argument('--csv', default=None, help=f'save the ranked windows to this CSV file (in {OUTPUT_DIR}/ unless a directory is given) and the printed table to the same name with .txt')
 	parser.add_argument('--weight-kmag', action='store_true', help='weight the S/N by stellar K-band photon flux, 10^(-0.2 (Kmag - 6)) (column 10); targets without Kmag are skipped')
 	parser.add_argument('--weight-contrast', action='store_true', help="weight the S/N by the planet's expected dayside contrast (target-list column named by --contrast-column)")
 	parser.add_argument('--contrast-column', default='K contrast (ppm)', help='header name of the contrast column used by --weight-contrast')
+	parser.add_argument('--split-targets', action='store_true', help='with --csv, also write one CSV/.txt per target (<csv name>_<target>.csv), ranked within the target')
 	parser.add_argument('--snr-min', type=float, default=0.3, help='drop windows with relative S/N below this (0 keeps all)')
+	parser.add_argument('--max-hours', type=float, default=None, help='maximum wall-clock length (hours) of a window: the best stretch of this length within the usable time is used, for targets that do not need the whole night')
+	parser.add_argument('--airmass-k', type=float, default=0., help='extinction (mag/airmass) for the airmass weight 10^(-0.4 k (X-1)) on S/N^2 (0: none; ~0.05 in H/K at Maunakea)')
+	parser.add_argument('--seeing-exponent', type=float, default=0., help='slit-loss airmass weight X^(-p) on S/N^2, for seeing FWHM ~ X^0.6 wider than the slit (0: none; 0.6 in that limit)')
 	parser.add_argument('--inclination', type=float, default=90., help='orbital inclination (deg) applied to all targets: Kp = Kp_max sin(i), and the Lambertian phase angle uses cos(a) = -sin(i) cos(2 pi phase)')
 	args = parser.parse_args()
 
@@ -135,6 +176,8 @@ if __name__ == '__main__':
 			coord = SkyCoord(ra=obj[1], dec=obj[2], unit=(u.hourangle, u.deg))
 			objaltaz = coord.transform_to(altazframe)
 			alt = objaltaz.alt.deg
+			airmass = 1./np.sin(np.radians(np.clip(alt, 1., 90.)))
+			wam = 10**(-0.4*args.airmass_k*(airmass-1.)) * airmass**(-args.seeing_exponent)
 			### Skip if the moon comes within moon_sep_min of the target while it's up at night
 			upatnight = (sunalt < 0.) & (alt > 0.)
 			if np.any(objaltaz.separation(moonaltaz).deg[upatnight] < args.moon_sep_min):
@@ -151,19 +194,23 @@ if __name__ == '__main__':
 			usable = night & (alt > args.alt_min) & dayside & ~in_eclipse
 			if not np.any(usable):
 				continue
+			if args.max_hours is not None:
+				usable = best_subwindow(usable, fpl**2*wam, vpl, int(round(args.max_hours/dt_hr))+1)
 			usable_hrs = np.sum(usable)*dt_hr
 			### Effective hours, weighting each exposure by f^2
-			eff_hrs = np.sum(fpl[usable]**2)*dt_hr
+			eff_hrs = np.sum(fpl[usable]**2*wam[usable])*dt_hr
 			delta_v = np.max(vpl[usable]) - np.min(vpl[usable])
 			if delta_v < args.delta_v_min:
 				continue
 
 			ut_usable = hours[usable]
+			span = (hours >= ut_usable[0]) & (hours <= ut_usable[-1])
 			rows.append({'date':hstdate, 'name':obj[0], 'bright':bright, 'illum':illum,
 						'hrs':usable_hrs, 'eff_hrs':eff_hrs, 'fpl':np.mean(fpl[usable]), 'ut0':ut_usable[0], 'ut1':ut_usable[-1],
+						'X_mean':np.mean(airmass[usable]), 'X_max':np.max(airmass[usable]),
 						'ph0':phase[usable][0], 'ph1':phase[usable][-1],
 						'v0':vpl[usable][0], 'v1':vpl[usable][-1], 'dv':delta_v,
-						'crosses_eclipse':np.any(in_eclipse & night & (alt > args.alt_min)), 'weight':weight})
+						'crosses_eclipse':np.any(in_eclipse & night & (alt > args.alt_min) & span), 'weight':weight})
 
 	### Relative planet S/N (x stellar flux and planet contrast weights if requested)
 	for r in rows:
@@ -180,18 +227,39 @@ if __name__ == '__main__':
 	if args.top is not None:
 		rows = rows[:args.top]
 
-	print(f"{'rank':>4} {'HST date':10} {'target':14} {'moon':6} {'illum':>5} {'hrs':>5} {'UT start':>8} {'UT end':>7} {'ph0':>5} {'ph1':>5} {'v0':>6} {'v1':>6} {'dv':>5} {'f_pl':>5} {'S/N':>5} {'ecl':>4}")
-	for i, r in enumerate(rows):
-		print(f"{i+1:4d} {r['date']:10} {r['name'][:14]:14} {'bright' if r['bright'] else 'dark':6} {r['illum']:5.2f} {r['hrs']:5.2f} "
-			f"{r['ut0']:8.2f} {r['ut1']:7.2f} {r['ph0']:5.2f} {r['ph1']:5.2f} {r['v0']:6.0f} {r['v1']:6.0f} {r['dv']:5.0f} {r['fpl']:5.2f} {r['snr']:5.2f} {'Y' if r['crosses_eclipse'] else '':>4}")
+	def table_lines(rows, first):
+		lines = [first,
+			f"{'rank':>4} {'HST date':10} {'target':14} {'moon':6} {'illum':>5} {'hrs':>5} {'UT start':>8} {'UT end':>7} {'ph0':>5} {'ph1':>5} {'v0':>6} {'v1':>6} {'dv':>5} {'f_pl':>5} {'X':>4} {'Xmax':>4} {'S/N':>5} {'ecl':>4}"]
+		for i, r in enumerate(rows):
+			lines.append(f"{i+1:4d} {r['date']:10} {r['name'][:14]:14} {'bright' if r['bright'] else 'dark':6} {r['illum']:5.2f} {r['hrs']:5.2f} "
+				f"{r['ut0']:8.2f} {r['ut1']:7.2f} {r['ph0']:5.2f} {r['ph1']:5.2f} {r['v0']:6.0f} {r['v1']:6.0f} {r['dv']:5.0f} {r['fpl']:5.2f} {r['X_mean']:4.2f} {r['X_max']:4.2f} {r['snr']:5.2f} {'Y' if r['crosses_eclipse'] else '':>4}")
+		return lines
 
-	if args.csv is not None:
-		with open(args.csv, 'w', newline='') as f:
+	def write_outputs(path, rows, first):
+		"""Ranked windows to path (CSV) and the printed table, with the command, to .txt."""
+		with open(os.path.splitext(path)[0]+'.txt', 'w') as f:
+			f.write(' '.join(sys.argv)+'\n'+'\n'.join(table_lines(rows, first))+'\n')
+		with open(path, 'w', newline='') as f:
 			writer = csv.writer(f)
 			writer.writerow(['rank', 'hst_date', 'target', 'moon', 'illum', 'usable_hrs', 'ut_start', 'ut_end',
-							'phase_start', 'phase_end', 'v_start', 'v_end', 'delta_v', 'f_pl', 'rel_snr', 'crosses_eclipse'])
+							'phase_start', 'phase_end', 'v_start', 'v_end', 'delta_v', 'f_pl', 'rel_snr', 'crosses_eclipse', 'airmass_mean', 'airmass_max'])
 			for i, r in enumerate(rows):
 				writer.writerow([i+1, r['date'], r['name'], 'bright' if r['bright'] else 'dark', f"{r['illum']:.2f}", f"{r['hrs']:.2f}",
 								f"{r['ut0']:.2f}", f"{r['ut1']:.2f}", f"{r['ph0']:.3f}", f"{r['ph1']:.3f}", f"{r['v0']:.1f}", f"{r['v1']:.1f}",
-								f"{r['dv']:.1f}", f"{r['fpl']:.3f}", f"{r['snr']:.3f}", 'Y' if r['crosses_eclipse'] else 'N'])
-		print('Saved', args.csv)
+								f"{r['dv']:.1f}", f"{r['fpl']:.3f}", f"{r['snr']:.3f}", 'Y' if r['crosses_eclipse'] else 'N', f"{r['X_mean']:.3f}", f"{r['X_max']:.3f}"])
+		print('Saved', path, 'and', os.path.splitext(path)[0]+'.txt')
+
+	first = f"{len(rows)} of {n_all} windows with relative S/N >= {args.snr_min}"
+	print('\n'.join(table_lines(rows, first)[1:]))
+
+	if args.csv is not None:
+		if not os.path.dirname(args.csv):
+			args.csv = os.path.join(OUTPUT_DIR, args.csv)
+		os.makedirs(os.path.dirname(args.csv), exist_ok=True)
+		write_outputs(args.csv, rows, first)
+		if args.split_targets:
+			stem, ext = os.path.splitext(args.csv)
+			for name in dict.fromkeys(r['name'] for r in rows):
+				sub = [r for r in rows if r['name'] == name]
+				write_outputs(f"{stem}_{re.sub(r'[^A-Za-z0-9]', '', name)}{ext}", sub,
+							f"{name}: {len(sub)} windows (relative S/N normalized over all targets in the list)")
