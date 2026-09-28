@@ -16,6 +16,11 @@ observatory.
   - moon separation, twilight and secondary eclipse.
 
   Windows can be capped at a maximum length.
+- **`hrccs-plan transits`**: ranks transit windows for transmission spectroscopy: the transit
+  plus an out-of-transit baseline, split around the transit or on either side, all above
+  airmass 2 and weighted by the in-transit airmass.
+- **Gemini timing windows:** `windows` and `transits` can both write their results
+  (`--gemini-tw`) in the format of the Gemini PIT proposal's Scheduling field.
 - **`hrccs-plan ephemeris`**: the orbital phase and its uncertainty on a date, which matters
   for non-transiting planets.
 - **`hrccs-plan targetlist` / `catalog` / `starlist`**: target lists from the NASA Exoplanet
@@ -60,10 +65,11 @@ Run `hrccs-plan COMMAND --help` for every option.
   4. [Non-transiting planets: inclination, capped windows, ephemeris errors](docs/tutorials/04_nontransiting.md)
   5. [From windows to the telescope: starlists and simulations](docs/tutorials/05_starlists_and_simulations.md)
   6. [Using the Python library](docs/tutorials/06_python_library.md)
+  7. [Transit windows](docs/tutorials/07_transit_windows.md)
 
 ## Roadmap
 
-- Window ranking for transmission (in-transit plus baseline) and for eccentric orbits.
+- Emission-window ranking for eccentric orbits.
 - Instrument presets: slit width, overheads, saturation-aware exposure times.
 - A PyPI release.
 

@@ -2,6 +2,10 @@
 
 ## Unreleased
 
+- `hrccs-plan transits`: rank transit windows, i.e. the transit (T14) plus an out-of-transit
+  baseline (`--baseline`, split around the transit or `--baseline-mode any`). The whole window
+  must be at night and above `--alt-min`; the S/N counts the in-transit time weighted by
+  airmass. The command supports `--gemini-tw`, CSV/text output and per-target files.
 - `windows --gemini-tw FILE`: write the ranked windows as Gemini PIT timing windows
   (`YYYY-MM-DD HH:MM:SS H:MM`, UT start and duration, one block per target) for the proposal's
   Scheduling field; `--tw-round` sets the rounding (default 15 minutes).

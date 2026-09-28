@@ -87,6 +87,41 @@ duration, one block per target) for the proposal's Scheduling field.
 Rows are sorted with bright time first (IR observations are insensitive to moonlight, so
 bright nights are easier to get), then by S/N. `--sort snr` sorts by S/N only.
 
+## `transits`: ranking transit windows
+
+A **transit window** is the transit, from first to fourth contact (`--duration`, T14 in hours),
+centred on T_c = T0 + n P. It is extended by an out-of-transit baseline of `--baseline` hours
+in total:
+
+- **`--baseline-mode split`** (the default) puts half the baseline before ingress and half
+  after egress.
+- **`--baseline-mode any`** accepts any division, including all of the baseline on one side.
+  The most even division that fits is used; among equally even ones, the one with the lowest
+  mean airmass.
+
+The whole window, transit plus baseline, must meet these conditions:
+
+- it is at night (Sun below `--twilight`);
+- the target is above `--alt-min` (30°, i.e. airmass < 2) and the site's pointing limit;
+- the Moon stays at least `--moon-sep-min` from the target.
+
+The relative S/N counts only the in-transit time, weighted by airmass:
+
+S/N ∝ √(Σ_in-transit w(X) Δt) × W
+
+- **w(X)** is the same airmass weight as for emission, set by `--airmass-k` and
+  `--seeing-exponent`.
+- **W** is the optional per-target weight: `--weight-kmag`, and `--weight-contrast` with a
+  column such as an expected transmission signal.
+- **No phase curve or velocity term** is used. A transit is always seen at the same phases, so
+  the planet's illuminated fraction doesn't enter.
+
+Transit times use only T0 and the period, so eccentric orbits work as long as T0 is a transit
+time. Targets with `Transiting? = N` are skipped. Per-target durations can come from a column
+(`--duration-column`), which overrides `--duration` where it is filled in.
+
+`--gemini-tw` writes each window, transit plus baseline, as a Gemini timing window.
+
 ## `nights`: nightly plots
 
 For each night, `nights` plots every target that meets all of the following:
