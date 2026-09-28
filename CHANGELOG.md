@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+- `targetlist archive` also writes the archive's transit duration (`pl_trandur`) as a
+  `T14 (h)` column, for `transits --duration-column "T14 (h)"`.
 - `hrccs-plan transits`: rank transit windows, i.e. the transit (T14) plus an out-of-transit
   baseline (`--baseline`, split around the transit or `--baseline-mode any`). The whole window
   must be at night and above `--alt-min`; the S/N counts the in-transit time weighted by

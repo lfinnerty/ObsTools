@@ -65,8 +65,8 @@ comes first. When an even split fits, as on 07-29, it is used.
 
 ## Notes
 
-- **Per-target durations:** add a T14 column (hours) to the target list and pass
-  `--duration-column "T14 (h)"`.
+- **Per-target durations:** `hrccs-plan targetlist archive` writes the archive's T14 as a
+  `T14 (h)` column; pass `--duration-column "T14 (h)"`. You can also add the column by hand.
 - **Comparing targets:** `--weight-kmag` (stellar brightness) and `--weight-contrast` with a
   column such as an expected transmission signal in ppm rank several targets against each other.
 - **Ephemeris errors:** the windows use T0 and P only. Check `hrccs-plan ephemeris` if the

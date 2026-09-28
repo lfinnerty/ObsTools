@@ -165,7 +165,7 @@ def cmd_targetlist_archive(args, parser):
     name = name[:-4] if name.endswith('.csv') else name
     name = name[:-11] if name.endswith('_targetlist') else name
     out = output_path(name + '_targetlist.csv', 'targetlists', args.workspace)
-    write_targets(out, [exoarchive_target(r, args.circular_below) for r in rows], extra_columns=[])
+    write_targets(out, [exoarchive_target(r, args.circular_below) for r in rows])
     print(f'Wrote {len(rows)} planet(s) to {out}')
 
 
@@ -250,7 +250,7 @@ def build_parser():
     p.add_argument('--site', required=True, help='site, telescope or instrument (hrccs-plan sites)')
     _add_dates(p, single=False)
     p.add_argument('--duration', type=float, help='transit duration T14 [h], first to fourth contact, for all targets')
-    p.add_argument('--duration-column', help='target-list column with T14 [h] (overrides --duration where filled)')
+    p.add_argument('--duration-column', help="target-list column with T14 [h] (overrides --duration where filled; 'T14 (h)' is written by targetlist archive)")
     p.add_argument('--baseline', type=float, default=2., help='total out-of-transit baseline [h] (default 2)')
     p.add_argument('--baseline-mode', choices=['split', 'any'], default='split',
                    help='split: half the baseline before and half after the transit (default); '
