@@ -8,6 +8,7 @@ from astropy.coordinates import SkyCoord, EarthLocation, AltAz, get_sun, get_bod
 import csv
 import sys
 import argparse
+import os
 from datetime import datetime, timedelta
 
 
@@ -50,7 +51,11 @@ if __name__ == '__main__':
 		action='store_true',
 		help='only plot targets whose observed velocity crosses conjunction',
 	)
+	parser.add_argument('--outdir', default='plots', help='directory to save plots in')
+	parser.add_argument('--moon-sep-min', type=float, default=10., help='minimum target-moon separation (deg) while the target is up at night')
+	parser.add_argument('--inclination', type=float, default=90., help='orbital inclination (deg) applied to all targets: Kp = Kp_max sin(i)')
 	args = parser.parse_args()
+	os.makedirs(args.outdir, exist_ok=True)
 	if args.date is not None and (args.start_date is not None or args.end_date is not None):
 		parser.error('--date cannot be combined with --start-date or --end-date')
 	if (args.start_date is None) != (args.end_date is None):
@@ -112,7 +117,7 @@ if __name__ == '__main__':
 			coord = SkyCoord(ra=objects[i][1], dec=objects[i][2], unit=(u.hourangle, u.deg))
 			# print(coord)
 			period = objects[i][3]
-			kp = objects[i][8] 
+			kp = objects[i][8]*np.sin(np.radians(args.inclination))
 			t0 = objects[i][5]
 
 			if objects[i][7] in ['No', 'N']:
@@ -135,6 +140,12 @@ if __name__ == '__main__':
 
 			### Now plot object altaz and Kp versus time
 			objaltaz = coord.transform_to(AltAz(obstime=dates[j], location=site))
+			### Skip if the moon comes within moon_sep_min of the target while it's up at night
+			upatnight = (sunaltaz.alt < -0*u.deg) & (objaltaz.alt > 0*u.deg)
+			moonsep = objaltaz.separation(moonaltaz)
+			if np.any(moonsep[upatnight] < args.moon_sep_min*u.deg):
+				print('Skipping', objects[i][0], 'on', hstdates[j], '- min moon separation', f'{np.min(moonsep[upatnight].deg):.1f}', 'deg')
+				continue
 			### Want it above horizon during the night
 			if np.sum(objaltaz.alt[sunaltaz.alt < -0*u.deg] > 30*u.deg) > 4:
 
@@ -212,7 +223,7 @@ if __name__ == '__main__':
 		ax[1].set_xlabel('UT time [hr]')
 		ax[0].set_title('HST date: '+hstdates[j])
 		if nobj>0:
-			plt.savefig('plots/'+hstdates[j]+'_'+sitestr+'.png', bbox_inches='tight')
+			plt.savefig(os.path.join(args.outdir, hstdates[j]+'_'+sitestr+'.png'), bbox_inches='tight')
 		plt.close()
 		# plt.show()
 
