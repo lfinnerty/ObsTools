@@ -93,6 +93,7 @@ if __name__ == '__main__':
 	parser.add_argument('--weight-contrast', action='store_true', help="weight the S/N by the planet's expected dayside contrast (target-list column named by --contrast-column)")
 	parser.add_argument('--contrast-column', default='K contrast (ppm)', help='header name of the contrast column used by --weight-contrast')
 	parser.add_argument('--split-targets', action='store_true', help='with --csv, also write one CSV/.txt per target (<csv name>_<target>.csv), ranked within the target')
+	parser.add_argument('--normalize-per-target', action='store_true', help="normalize the relative S/N to each target's own best window (--snr-min then applies per target) instead of the best window overall")
 	parser.add_argument('--snr-min', type=float, default=0.3, help='drop windows with relative S/N below this (0 keeps all)')
 	parser.add_argument('--max-hours', type=float, default=None, help='maximum wall-clock length (hours) of a window: the best stretch of this length within the usable time is used, for targets that do not need the whole night')
 	parser.add_argument('--airmass-k', type=float, default=0., help='extinction (mag/airmass) for the airmass weight 10^(-0.4 k (X-1)) on S/N^2 (0: none; ~0.05 in H/K at Maunakea)')
@@ -215,9 +216,16 @@ if __name__ == '__main__':
 	### Relative planet S/N (x stellar flux and planet contrast weights if requested)
 	for r in rows:
 		r['snr'] = np.sqrt(r['eff_hrs']*r['dv'])*r['weight']
-	snr_max = max([r['snr'] for r in rows]) if rows else 1.
-	for r in rows:
-		r['snr'] /= snr_max
+	if args.normalize_per_target:
+		snr_max = {}
+		for r in rows:
+			snr_max[r['name']] = max(snr_max.get(r['name'], 0.), r['snr'])
+		for r in rows:
+			r['snr'] /= snr_max[r['name']]
+	else:
+		snr_max = max([r['snr'] for r in rows]) if rows else 1.
+		for r in rows:
+			r['snr'] /= snr_max
 	n_all = len(rows)
 	rows = [r for r in rows if r['snr'] >= args.snr_min]
 	print(f'{len(rows)} of {n_all} windows with relative S/N >= {args.snr_min}')
@@ -262,4 +270,5 @@ if __name__ == '__main__':
 			for name in dict.fromkeys(r['name'] for r in rows):
 				sub = [r for r in rows if r['name'] == name]
 				write_outputs(f"{stem}_{re.sub(r'[^A-Za-z0-9]', '', name)}{ext}", sub,
-							f"{name}: {len(sub)} windows (relative S/N normalized over all targets in the list)")
+							f"{name}: {len(sub)} windows (relative S/N normalized to "
+							+ ("this target's best window)" if args.normalize_per_target else "the best window of all targets in the list)"))
