@@ -148,7 +148,8 @@ def cmd_nights(args, parser):
     if args.window:
         shading[None] = [parse_window(w) + (None, None) for w in args.window]
     saved = plan_nights(targets, get_site(args.site), _dates(args, parser), outdir, opts, shading=shading,
-                        compact=args.compact, fmt=args.format, title=args.title, site_label=args.site_label)
+                        compact=args.compact, fmt=args.format, title=args.title, site_label=args.site_label,
+                        show_all=args.show_all)
     print(f'{len(saved)} plot(s) in {outdir}')
 
 
@@ -299,6 +300,7 @@ def build_parser():
     p.add_argument('--inclination', type=float, default=90., help='orbital inclination [deg] for all targets (default 90)')
     p.add_argument('--shade', nargs='+', metavar='CSV', help='shade the observing windows in these `windows`/`transits` CSVs (matched by night and target; bare names are looked up in <workspace>/output/)')
     p.add_argument('--window', nargs='+', metavar='HH:MM-HH:MM', help='shade this UT window on every plotted night (e.g. 07:49-14:33)')
+    p.add_argument('--show-all', action='store_true', help='plot every target that is up at night, skipping the velocity-change and dayside criteria (e.g. all planets of a system)')
     p.add_argument('--compact', action='store_true', help='small figure for proposals/papers (6.4 x 5.2 in, shared UT axis, dark hours only, airmass-2 line)')
     p.add_argument('--format', choices=['png', 'pdf', 'svg'], default='png', help='output format (default png)')
     p.add_argument('--title', help="figure title (default generated; '' for none)")

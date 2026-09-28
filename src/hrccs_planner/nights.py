@@ -77,6 +77,17 @@ def observable_targets(targets, site, date, opts=None, log=print, always=()):
     return night, shown
 
 
+def host_key(target):
+    """Targets orbiting the same star (same position to ~1 arcsec) share a key."""
+    c = target.coord
+    return (round(c.ra.deg, 3), round(c.dec.deg, 3))
+
+
+def star_label(host):
+    """Primary-star label: 'TOI-1408' -> 'TOI-1408A', 'HD 189733' -> 'HD 189733A', '55 Cnc' -> '55 Cnc A'."""
+    return host + ('A' if host[-1:].isdigit() else ' A')
+
+
 def read_shading(paths):
     """Observing windows to shade, from ranked-window or transit-window CSVs
     (`hrccs-plan windows/transits --csv`): {(date, target): [(ut0, ut1, t1, t4)]},
@@ -135,14 +146,26 @@ def plot_night(night, shown, site, path, windows=None, compact=False, title=None
         fig, ax = plt.subplots(nrows=2, ncols=1, figsize=(16, 12))
     colors = plt.rcParams['axes.prop_cycle'].by_key()['color']
     shaded = False
-    for k, (t, altaz, kps, draw) in enumerate(shown):
-        c = colors[k % len(colors)]
+    # one airmass curve per host star: planets of the same star share it, labelled
+    # with the host name (+ 'A') when more than one of its planets is shown
+    hosts = {}
+    for t, altaz, *_ in shown:
+        hosts.setdefault(host_key(t), []).append((t, altaz))
+    for members in hosts.values():
+        t, altaz = members[0]
+        multi = len(members) > 1
+        c = '0.25' if multi else colors[[x.name for x, *_ in shown].index(t.name) % len(colors)]
         up = altaz.alt.deg > 0
-        ax[0].plot(hours[up], altaz.secz[up], color=c, label=t.name, lw=1.6 if compact else 1.5)
-        ax[1].plot(hours[draw], kps[draw], color=c, label=t.name, lw=1.2 if compact else 1.5,
-                   alpha=0.6 if compact and t.name in windows else 1.)
-        if not compact or len(shown) > 1:
-            ax[1].text(hours[draw][-1], kps[draw][-1], t.name, fontsize=9 if compact else None)
+        ax[0].plot(hours[up], altaz.secz[up], color=c, label=star_label(t.host) if multi else t.name,
+                   lw=1.6 if compact else 1.5)
+    vel_handles = []
+    for k, (t, _, kps, draw) in enumerate(shown):
+        c = colors[k % len(colors)]
+        line, = ax[1].plot(hours[draw], kps[draw], color=c, label=t.name, lw=1.2 if compact else 1.5,
+                           alpha=0.6 if compact and t.name in windows else 1.)
+        vel_handles.append(line)
+        if not compact:
+            ax[1].text(hours[draw][-1], kps[draw][-1], t.name)
         for ut0, ut1, t1, t4 in windows.get(t.name, []):
             lab = 'Observing window' if not shaded else None
             for a in ax:
@@ -176,10 +199,19 @@ def plot_night(night, shown, site, path, windows=None, compact=False, title=None
         ax[1].set_ylim(-vlim, vlim)
         ax[1].set_ylabel(r'$v_\mathrm{pl}$ [km s$^{-1}$]')
         ax[0].legend(fontsize=8, loc='lower center', ncol=3, frameon=True, framealpha=0.9)
+        if len(shown) > 1:
+            ax[1].legend(handles=vel_handles, fontsize=8, loc='lower left', frameon=True, framealpha=0.9)
         ax[1].xaxis.set_major_formatter(ticker.FuncFormatter(lambda x, _: f'{x % 24:.0f}'))
         for a in ax:
             a.tick_params(direction='in', top=True, right=True)
-        names = ', '.join(t.name for t, *_ in shown)
+        parts = []
+        for members in hosts.values():
+            letters = [t.name[len(t.host):].strip() for t, _ in members]
+            if len(members) > 1 and all(len(x) == 1 for x in letters):
+                parts.append(f"{members[0][0].host} {', '.join(letters[:-1])} and {letters[-1]}")
+            else:
+                parts.extend(t.name for t, _ in members)
+        names = ', '.join(parts)
         ax[0].set_title(title if title is not None else
                         f'{names}: {site_label or site.name}, night of {night.date}', fontsize=11)
     else:
@@ -202,7 +234,7 @@ def plot_night(night, shown, site, path, windows=None, compact=False, title=None
 
 
 def plan_nights(targets, site, dates, outdir, opts=None, log=print, shading=None, compact=False,
-                fmt='png', title=None, site_label=None):
+                fmt='png', title=None, site_label=None, show_all=False):
     """Plot every night with at least one observable target; returns the saved paths.
 
     shading -- {(date, target): [(ut0, ut1, t1, t4)]} windows to shade (read_shading),
@@ -212,7 +244,7 @@ def plan_nights(targets, site, dates, outdir, opts=None, log=print, shading=None
     shading = shading or {}
     for date in dates:
         always = {name for (d, name) in shading if d == date} | (
-            {t.name for t in targets} if None in shading else set())
+            {t.name for t in targets} if None in shading or show_all else set())
         night, shown = observable_targets(targets, site, date, opts, log, always)
         if shown and compact:
             # same targets, redrawn on a 2-minute grid for smooth curves and exact twilight

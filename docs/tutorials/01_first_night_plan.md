@@ -91,6 +91,10 @@ hrccs-plan nights TOI-1408b --site gemini-n --date 2027-07-22 --inclination 82.4
 
 ![Compact night plan with the observing window shaded](../images/nights_compact_example.png)
 
+For a multi-planet system, `--show-all` plots every planet that is up (skipping the dayside and
+velocity criteria). Planets of the same star share one airmass curve, labelled with the star
+(`TOI-1408A`), and each planet gets its own velocity curve.
+
 Targets with a shaded window on a night are always plotted, even if they would otherwise be
 left out. This is needed for transits, which happen on the night side of the orbit.
 

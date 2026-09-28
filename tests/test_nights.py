@@ -55,3 +55,8 @@ def test_shaded_targets_are_always_shown(examples):
     _, shown = observable_targets(t, get_site('keck'), date, NightOptions(delta_v_min=1e4), log=lambda s: None,
                                   always={'KELT-9 b'})
     assert [x.name for x, *_ in shown] == ['KELT-9 b']
+
+
+def test_star_label():
+    from hrccs_planner.nights import star_label
+    assert star_label('TOI-1408') == 'TOI-1408A' and star_label('55 Cnc') == '55 Cnc A'
