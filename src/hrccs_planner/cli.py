@@ -56,7 +56,7 @@ def cmd_sites(args, parser):
 
 
 def cmd_windows(args, parser):
-    from .windows import WindowOptions, rank_windows, split_path, table_lines, write_windows
+    from .windows import WindowOptions, gemini_timing_windows, rank_windows, split_path, table_lines, write_windows
     path = resolve_targetlist(args.targetlist, args.workspace)
     targets = read_targets(path)
     site = get_site(args.site)
@@ -82,6 +82,13 @@ def cmd_windows(args, parser):
                 files = write_windows(split_path(out, name), sub,
                                       f'{name}: {len(sub)} windows (relative S/N normalized to {norm})')
                 print('Saved', ' and '.join(files))
+    if args.gemini_tw:
+        out = output_path(args.gemini_tw, 'output/best_windows', args.workspace)
+        text = gemini_timing_windows(rows, args.tw_round)
+        with open(out, 'w') as fh:
+            fh.write(text)
+        print(f'\nGemini PIT timing windows (paste into the Scheduling field), saved to {out}:\n')
+        print(text, end='')
 
 
 def cmd_nights(args, parser):
@@ -195,6 +202,8 @@ def build_parser():
     p.add_argument('--top', type=int, help='keep only the top N windows')
     p.add_argument('--csv', help='save the windows to this CSV (in <workspace>/output/best_windows/ unless a directory is given), and the table to the same name with .txt')
     p.add_argument('--split-targets', action='store_true', help='with --csv, also write one CSV/.txt per target (<csv>_<target>.csv)')
+    p.add_argument('--gemini-tw', metavar='FILE', help='also write the windows as Gemini PIT timing windows (UT start and duration per line, one block per target) for the proposal Scheduling field (in <workspace>/output/best_windows/ unless a directory is given)')
+    p.add_argument('--tw-round', type=int, default=15, metavar='MIN', help='round timing-window starts down and ends up to MIN minutes (default 15; 0 for exact minutes)')
     p.set_defaults(func=cmd_windows)
 
     p = sub.add_parser('nights', parents=[common], help='nightly airmass and planet-velocity plots',

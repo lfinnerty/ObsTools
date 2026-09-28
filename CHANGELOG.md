@@ -1,5 +1,11 @@
 # Changelog
 
+## Unreleased
+
+- `windows --gemini-tw FILE`: write the ranked windows as Gemini PIT timing windows
+  (`YYYY-MM-DD HH:MM:SS H:MM`, UT start and duration, one block per target) for the proposal's
+  Scheduling field; `--tw-round` sets the rounding (default 15 minutes).
+
 ## 0.1.0 — ObsTools becomes `hrccs_planner`
 
 The scripts are now an installable package (`pip install -e .`) with one command-line

@@ -81,6 +81,9 @@ For each window, the output gives:
 - the relative S/N;
 - whether the window crosses secondary eclipse.
 
+With `--gemini-tw FILE`, the windows are also written as Gemini PIT timing windows (UT start and
+duration, one block per target) for the proposal's Scheduling field.
+
 Rows are sorted with bright time first (IR observations are insensitive to moonlight, so
 bright nights are easier to get), then by S/N. `--sort snr` sorts by S/N only.
 

@@ -72,6 +72,33 @@ Saved .../output/best_windows/2027A_per_target_KELT20b.csv and .../2027A_per_tar
 
 Each `.txt` file starts with the command that made it, so every result can be reproduced.
 
+## Timing windows for a Gemini proposal
+
+`--gemini-tw FILE` also writes the ranked windows as Gemini PIT timing windows: one block
+per target, one line per window with the UT start and the duration. You can paste the block
+straight into the proposal's **Scheduling** field.
+
+```bash
+hrccs-plan windows TOI-1408b --site gemini-n --start 2027-02-01 --end 2027-07-31 --duration 1.46 \
+    --inclination 82.4 --airmass-k 0.05 --seeing-exponent 0.6 --gemini-tw TOI-1408b_2027A_tw.txt
+```
+
+```
+TW for TOI-1408 b
+--------------------------------------------
+2027-06-18 10:00:00 4:30
+2027-06-22 09:45:00 4:45
+...
+2027-07-23 07:45:00 7:00
+2027-08-01 07:00:00 7:00
+```
+
+- **Order and dates.** Windows are listed in time order. Dates and times are UT, so a night
+  that starts on a local date can fall on the next UT date.
+- **Rounding.** Starts are rounded down and ends up to 15 minutes, so each window covers all
+  of the usable time. `--tw-round 0` keeps the exact minutes.
+- **Which windows.** The file contains exactly the windows that pass `--snr-min` and `--top`.
+
 ## Weighting by planet contrast
 
 If your target list has a column with the expected planet/star contrast, the ranking can also
