@@ -137,7 +137,18 @@ def cmd_nights(args, parser):
                         require_conjunction=args.require_conjunction, moon_sep_min=args.moon_sep_min,
                         inclination=args.inclination)
     outdir = args.outdir or os.path.join(workspace_dir(args.workspace), 'plots')
-    saved = plan_nights(targets, get_site(args.site), _dates(args, parser), outdir, opts)
+    from .nights import parse_window, read_shading
+    shading = {}
+    if args.shade:
+        paths = [p if os.path.dirname(p) or os.path.exists(p) else
+                 next((c for c in (os.path.join(workspace_dir(args.workspace), 'output', d, p)
+                                   for d in ('best_windows', 'transit_windows')) if os.path.exists(c)), p)
+                 for p in args.shade]
+        shading = read_shading(paths)
+    if args.window:
+        shading[None] = [parse_window(w) + (None, None) for w in args.window]
+    saved = plan_nights(targets, get_site(args.site), _dates(args, parser), outdir, opts, shading=shading,
+                        compact=args.compact, fmt=args.format, title=args.title, site_label=args.site_label)
     print(f'{len(saved)} plot(s) in {outdir}')
 
 
@@ -286,6 +297,12 @@ def build_parser():
     p.add_argument('--require-conjunction', action='store_true', help='only targets whose velocity crosses zero (conjunction) during the night')
     p.add_argument('--moon-sep-min', type=float, default=10., help='minimum target-Moon separation [deg] (default 10)')
     p.add_argument('--inclination', type=float, default=90., help='orbital inclination [deg] for all targets (default 90)')
+    p.add_argument('--shade', nargs='+', metavar='CSV', help='shade the observing windows in these `windows`/`transits` CSVs (matched by night and target; bare names are looked up in <workspace>/output/)')
+    p.add_argument('--window', nargs='+', metavar='HH:MM-HH:MM', help='shade this UT window on every plotted night (e.g. 07:49-14:33)')
+    p.add_argument('--compact', action='store_true', help='small figure for proposals/papers (6.4 x 5.2 in, shared UT axis, dark hours only, airmass-2 line)')
+    p.add_argument('--format', choices=['png', 'pdf', 'svg'], default='png', help='output format (default png)')
+    p.add_argument('--title', help="figure title (default generated; '' for none)")
+    p.add_argument('--site-label', help='site name for the compact title (default the site registry name, e.g. "Gemini North")')
     p.set_defaults(func=cmd_nights)
 
     p = sub.add_parser('ephemeris', parents=[common], help='orbital phase and its uncertainty on a date')

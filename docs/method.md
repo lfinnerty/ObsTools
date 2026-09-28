@@ -137,6 +137,11 @@ is above 15°. Twilight is shaded light gray (Sun below 0°) and dark gray (Sun 
 With `--require-conjunction`, only targets whose velocity crosses zero during the night are
 shown.
 
+`--shade CSV` or `--window HH:MM-HH:MM` shades observing windows. Targets with a shaded window
+are always shown, with the velocity and dayside criteria skipped. `--compact` draws a small
+publication-style figure on a 2-minute grid (instead of 100 points), so the twilight and window
+edges are exact.
+
 ## `ephemeris`: phase uncertainty
 
 - **What it computes.** The nearest conjunction to a date and its uncertainty,
