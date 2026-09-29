@@ -23,6 +23,9 @@ observatory.
   (`--gemini-tw`) in the format of the Gemini PIT proposal's Scheduling field.
 - **`hrccs-plan ephemeris`**: the orbital phase and its uncertainty on a date, which matters
   for non-transiting planets.
+- **`hrccs-plan phase-sensitivity`**: how much S/N the best dayside windows lose to that
+  uncertainty, assuming the analysis refits the conjunction. Compare scenarios, e.g. the
+  current ephemeris and one improved by new RVs.
 - **`hrccs-plan targetlist` / `catalog` / `starlist`**: target lists from the NASA Exoplanet
   Archive, TIC look-ups, and Keck and Magellan starlists with SIMBAD proper motions. Catalog
   queries are cached.

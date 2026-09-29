@@ -96,6 +96,37 @@ duration, one block per target) for the proposal's Scheduling field.
 Rows are sorted with bright time first (IR observations are insensitive to moonlight, so
 bright nights are easier to get), then by S/N. `--sort snr` sorts by S/N only.
 
+## `phase-sensitivity`: what ephemeris uncertainty costs a window
+
+A window is planned from the predicted ephemeris and observed at fixed clock times. If the true
+conjunction is off by δ in phase, the observation covers phases shifted by δ. When the HRCCS
+analysis refits the conjunction time, δ changes only *what is covered*: the phase curve f and
+the planet-velocity range Δv. For a planned window the S/N becomes
+
+S/N(δ) ∝ √(Σ f(phase + δ)² w Δt · Δv(phase + δ)),
+
+evaluated on the window's own usable samples, with the same weights as `windows`.
+
+- **Which windows.** Each target's `--top-windows` best windows (default 5), ranked as
+  `windows` ranks them with per-target normalization. For eccentric orbits δ shifts the time
+  since transit, and the dayside, eclipse, phase curve and velocities follow the orbit as in
+  `windows`.
+- **Averaging.** S/N(δ)/S/N(0) is averaged over δ ~ N(0, σ_phase). The command reports the mean
+  and the 10th percentile, i.e. the S/N of an unlucky ephemeris, both averaged over the windows.
+- **Where σ comes from.** Either the T0 and period uncertainty columns (`T err (d)`,
+  `P err (d)`), propagated to each window as in `ephemeris`, or any number of
+  `--sigma-column` columns giving σ_t in hours at the observing epoch. Each column is a
+  scenario, e.g. the current ephemeris and one improved by new RVs; the last column of the
+  output is the change in mean S/N relative to the first scenario.
+- **What to expect.** Windows centred on secondary eclipse sit where f and the velocity slope
+  both peak, so a small δ costs S/N only at second order: roughly ½ (S″/S) σ_phase². Losses
+  become noticeable once σ_t is a sizeable fraction of the window (σ_phase ≳ 0.03). Windows
+  off the eclipse are first-order sensitive, which widens the spread (the 10th percentile)
+  more than it lowers the mean.
+- **Assumptions.** The S/N is photon-noise limited, and the analysis re-derives the conjunction
+  (a fixed, wrong ephemeris would also misplace the planet's velocity track). The inclination
+  (`--inclination`) sets how strongly f varies; lower inclinations make phase errors matter less.
+
 ## `transits`: ranking transit windows
 
 A **transit window** is the transit, from first to fourth contact (`--duration`, T14 in hours),
