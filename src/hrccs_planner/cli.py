@@ -6,6 +6,7 @@
     hrccs-plan windows LIST --site S ...   rank observing windows for dayside emission
     hrccs-plan transits LIST --site S ...  rank transit windows (transit + baseline)
     hrccs-plan ephemeris LIST --date D     orbital phase and its uncertainty on a date
+    hrccs-plan phase-sensitivity LIST ...  S/N lost to ephemeris uncertainty in the best windows
     hrccs-plan targetlist archive NAME ... target list from the NASA Exoplanet Archive
     hrccs-plan catalog tic ID ...          TIC coordinates and magnitudes
     hrccs-plan starlist keck|magellan ...  telescope starlists (SIMBAD positions and proper motions)
@@ -41,6 +42,29 @@ def _add_dates(p, single=True):
     p.add_argument('--end-date', '--end', dest='end_date', help='last night (local date, YYYY-MM-DD)')
 
 
+def _add_window_geometry(p):
+    """Options that decide which time is usable and how it is weighted (windows, phase-sensitivity)."""
+    p.add_argument('--duration', type=float, default=0., help='eclipse duration [h] excluded around phase 0.5 (default 0)')
+    p.add_argument('--alt-min', type=float, default=30., help='minimum target altitude [deg] (default 30, airmass 2)')
+    p.add_argument('--twilight', type=float, default=-18., help='Sun altitude defining night [deg] (default -18)')
+    p.add_argument('--delta-v-min', type=float, default=30., help='minimum planet velocity change [km/s] (default 30)')
+    p.add_argument('--bright-threshold', type=float, default=0.5, help='Moon illumination at mid-night above which a night is bright time (default 0.5)')
+    p.add_argument('--moon-sep-min', type=float, default=10., help='minimum target-Moon separation [deg] while the target is up at night (default 10)')
+    p.add_argument('--inclination', type=float, default=90., help='orbital inclination [deg] for all targets: Kp = Kp_max sin(i), and the phase curve (default 90)')
+    p.add_argument('--max-hours', type=float, help='maximum wall-clock length of a window [h]: the best stretch of this length is used')
+    p.add_argument('--airmass-k', type=float, default=0., help='extinction [mag/airmass] in the airmass weight 10^(-0.4 k (X-1)) on S/N^2 (default 0; ~0.05 in H/K at Maunakea)')
+    p.add_argument('--seeing-exponent', type=float, default=0., help='slit-loss weight X^(-p) on S/N^2, for seeing (FWHM ~ X^0.6) wider than the slit (default 0; 0.6 in that limit)')
+
+
+def _window_options(args, **overrides):
+    from .windows import WindowOptions
+    kw = dict(duration=args.duration, alt_min=args.alt_min, twilight=args.twilight, delta_v_min=args.delta_v_min,
+              bright_threshold=args.bright_threshold, moon_sep_min=args.moon_sep_min, inclination=args.inclination,
+              max_hours=args.max_hours, airmass_k=args.airmass_k, seeing_exponent=args.seeing_exponent)
+    kw.update(overrides)
+    return WindowOptions(**kw)
+
+
 def cmd_init(args, parser):
     root, copied = init_workspace(args.dir or workspace_dir(args.workspace))
     print(f'Workspace: {root}')
@@ -57,15 +81,12 @@ def cmd_sites(args, parser):
 
 
 def cmd_windows(args, parser):
-    from .windows import WindowOptions, rank_windows, split_path, table_lines, write_windows
+    from .windows import rank_windows, split_path, table_lines, write_windows
     path = resolve_targetlist(args.targetlist, args.workspace)
     targets = read_targets(path)
     site = get_site(args.site)
-    opts = WindowOptions(
-        duration=args.duration, alt_min=args.alt_min, twilight=args.twilight, delta_v_min=args.delta_v_min,
-        bright_threshold=args.bright_threshold, moon_sep_min=args.moon_sep_min, inclination=args.inclination,
-        weight_kmag=args.weight_kmag, contrast_column=args.contrast_column if args.weight_contrast else None,
-        max_hours=args.max_hours, airmass_k=args.airmass_k, seeing_exponent=args.seeing_exponent,
+    opts = _window_options(
+        args, weight_kmag=args.weight_kmag, contrast_column=args.contrast_column if args.weight_contrast else None,
         normalize_per_target=args.normalize_per_target, snr_min=args.snr_min, sort=args.sort, top=args.top)
     try:
         rows, n_all = rank_windows(targets, site, _dates(args, parser), opts)
@@ -170,6 +191,27 @@ def cmd_ephemeris(args, parser):
         print(f"(errors from the '{args.t0_err_column}' and '{args.period_err_column}' columns; 0 if absent)")
 
 
+def cmd_phase_sensitivity(args, parser):
+    from .phase_sensitivity import Scenario, phase_sensitivity, table_lines, write_summary
+    targets = read_targets(resolve_targetlist(args.targetlist, args.workspace))
+    scenarios = [Scenario(column, column) for column in args.sigma_column or []]
+    if args.ephemeris_scenario or not scenarios:
+        scenarios.insert(0, Scenario('ephemeris'))
+    opts = _window_options(args, normalize_per_target=True, snr_min=0., sort='snr')
+    summary, windows = phase_sensitivity(targets, get_site(args.site), _dates(args, parser), opts, scenarios,
+                                         top=args.top_windows, t0_err_column=args.t0_err_column,
+                                         period_err_column=args.period_err_column)
+    print(f'S/N relative to a perfectly known ephemeris, mean and 10th percentile over delta ~ N(0, sigma_phase), '
+          f'averaged over each target\'s {args.top_windows} best windows')
+    print('\n'.join(table_lines(summary, scenarios)))
+    if 'ephemeris' in [s.name for s in scenarios]:
+        print(f"(ephemeris: sigma_t from the '{args.t0_err_column}' and '{args.period_err_column}' columns, "
+              'propagated to each window; 0 if absent)')
+    if args.csv:
+        out = output_path(args.csv, 'output/phase_sensitivity', args.workspace)
+        print('Saved', ' and '.join(write_summary(out, summary, windows)))
+
+
 def cmd_targetlist_archive(args, parser):
     from .catalogs import exoarchive_target, query_exoarchive
     rows = query_exoarchive(args.names, args.workspace, args.refresh)
@@ -231,19 +273,10 @@ def build_parser():
     p.add_argument('targetlist', help='target-list name (<workspace>/targetlists/<name>_targetlist.csv) or path')
     p.add_argument('--site', required=True, help='site, telescope or instrument (hrccs-plan sites)')
     _add_dates(p, single=False)
-    p.add_argument('--duration', type=float, default=0., help='eclipse duration [h] excluded around phase 0.5 (default 0)')
-    p.add_argument('--alt-min', type=float, default=30., help='minimum target altitude [deg] (default 30, airmass 2)')
-    p.add_argument('--twilight', type=float, default=-18., help='Sun altitude defining night [deg] (default -18)')
-    p.add_argument('--delta-v-min', type=float, default=30., help='minimum planet velocity change [km/s] (default 30)')
-    p.add_argument('--bright-threshold', type=float, default=0.5, help='Moon illumination at mid-night above which a night is bright time (default 0.5)')
-    p.add_argument('--moon-sep-min', type=float, default=10., help='minimum target-Moon separation [deg] while the target is up at night (default 10)')
-    p.add_argument('--inclination', type=float, default=90., help='orbital inclination [deg] for all targets: Kp = Kp_max sin(i), and the phase curve (default 90)')
-    p.add_argument('--max-hours', type=float, help='maximum wall-clock length of a window [h]: the best stretch of this length is used')
+    _add_window_geometry(p)
     p.add_argument('--weight-kmag', action='store_true', help='weight S/N by the stellar K-band photon flux, 10^(-0.2 (Kmag - 6)); targets without Kmag are skipped')
     p.add_argument('--weight-contrast', action='store_true', help='weight S/N by the planet contrast in --contrast-column')
     p.add_argument('--contrast-column', default='K contrast (ppm)', help="target-list column used by --weight-contrast (default 'K contrast (ppm)')")
-    p.add_argument('--airmass-k', type=float, default=0., help='extinction [mag/airmass] in the airmass weight 10^(-0.4 k (X-1)) on S/N^2 (default 0; ~0.05 in H/K at Maunakea)')
-    p.add_argument('--seeing-exponent', type=float, default=0., help='slit-loss weight X^(-p) on S/N^2, for seeing (FWHM ~ X^0.6) wider than the slit (default 0; 0.6 in that limit)')
     p.add_argument('--normalize-per-target', action='store_true', help="normalize S/N to each target's own best window (--snr-min then applies per target)")
     p.add_argument('--snr-min', type=float, default=0.3, help='drop windows with relative S/N below this (default 0.3; 0 keeps all)')
     p.add_argument('--sort', choices=['moon', 'snr'], default='moon', help='moon: bright time first, then S/N (default); snr: by S/N only')
@@ -315,6 +348,30 @@ def build_parser():
     p.add_argument('--t0-err-column', default='T err (d)', help="column with the T0 uncertainty (default 'T err (d)')")
     p.add_argument('--period-err-column', default='P err (d)', help="column with the period uncertainty (default 'P err (d)')")
     p.set_defaults(func=cmd_ephemeris)
+
+    p = sub.add_parser('phase-sensitivity', parents=[common],
+                       help='S/N lost to ephemeris uncertainty in the best dayside windows',
+                       description='For each target, find its best dayside windows (as `windows` does, with '
+                                   'per-target normalization) and average the S/N over a true conjunction offset '
+                                   'delta ~ N(0, sigma_phase), assuming the HRCCS analysis refits the conjunction so '
+                                   'only the covered phase curve and velocity range change. Compare scenarios, e.g. '
+                                   'current and improved ephemerides. Circular orbits only. See docs/method.md.')
+    p.add_argument('targetlist', help='target-list name or path')
+    p.add_argument('--site', required=True, help='site, telescope or instrument (hrccs-plan sites)')
+    _add_dates(p, single=False)
+    _add_window_geometry(p)
+    p.add_argument('--sigma-column', action='append', metavar='COLUMN',
+                   help='target-list column with the conjunction-time uncertainty sigma_t [h] at the observing '
+                        'epoch; repeat to compare scenarios (e.g. current and after new RVs)')
+    p.add_argument('--ephemeris-scenario', action='store_true',
+                   help='also include sigma_t propagated from the T0 and period uncertainty columns (the default '
+                        'when no --sigma-column is given)')
+    p.add_argument('--t0-err-column', default='T err (d)', help="column with the T0 uncertainty (default 'T err (d)')")
+    p.add_argument('--period-err-column', default='P err (d)', help="column with the period uncertainty (default 'P err (d)')")
+    p.add_argument('--top-windows', type=int, default=5, help="number of each target's best windows to average (default 5)")
+    p.add_argument('--csv', help='save the summary to this CSV, and the per-window results to <csv>_windows.csv '
+                                 '(in <workspace>/output/phase_sensitivity/ unless a directory is given)')
+    p.set_defaults(func=cmd_phase_sensitivity)
 
     p = sub.add_parser('targetlist', help='make target lists from catalogs')
     tsub = p.add_subparsers(dest='source', required=True, metavar='SOURCE')

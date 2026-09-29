@@ -2,6 +2,12 @@
 
 ## Unreleased
 
+- `hrccs-plan phase-sensitivity`: the S/N a target's best dayside windows lose to ephemeris
+  uncertainty. The planned windows keep their clock times while the true phase is shifted by
+  δ ~ N(0, σ_phase), assuming the HRCCS analysis refits the conjunction. It reports the mean and
+  10th-percentile S/N ratio per target, for σ from the `T err (d)`/`P err (d)` columns or from
+  one or more `--sigma-column` scenarios (σ_t in hours), with `--csv` summary and per-window
+  output. `windows` and `phase-sensitivity` now share their window-geometry options.
 - `nights`: planets of the same star share one airmass curve, labelled with the star (e.g.
   `TOI-1408A`) when several are shown; `--show-all` plots every planet that is up, skipping the
   dayside/velocity criteria (e.g. both TOI-1408 b and c).
