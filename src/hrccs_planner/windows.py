@@ -1,8 +1,12 @@
-"""Rank nights for dayside (emission) HRCCS of circular-orbit planets.
+"""Rank nights for dayside (emission) HRCCS.
 
 For each target and night the usable time is: target above alt_min (and the
 site's pointing limit, if any), Sun below the twilight altitude, planet on the
 dayside half of the orbit (phase 0.25-0.75) and outside secondary eclipse.
+For an eccentric orbit, the dayside and the phase curve use the orbital phase
+(orbital angle from transit / 2 pi; ephemeris.eccentric_orbit), the eclipse is
+excluded around its own time (ephemeris.eclipse_phase), and the planet velocity
+is the Keplerian curve.
 
 The planet signal in each exposure is scaled by a Lambertian phase curve f
 (ephemeris.lambert_phase), and each exposure can be weighted by an airmass term
@@ -28,14 +32,14 @@ from typing import Optional
 import numpy as np
 from numpy.lib.stride_tricks import sliding_window_view
 
-from .ephemeris import lambert_phase, orbital_phase, planet_rv_circular
+from .ephemeris import eccentric_orbit, eclipse_phase, lambert_phase, orbital_phase, planet_rv_circular
 from .visibility import airmass as airmass_of
 from .visibility import moon_too_close, night_sky
 
 
 @dataclass
 class WindowOptions:
-    duration: float = 0.            # eclipse duration [h], excluded around phase 0.5
+    duration: float = 0.            # eclipse duration [h], excluded around the eclipse (phase 0.5 if circular)
     alt_min: float = 30.            # minimum target altitude [deg] (airmass 2)
     twilight: float = -18.          # Sun altitude defining night [deg]
     delta_v_min: float = 30.        # minimum planet velocity change [km/s]
@@ -107,9 +111,6 @@ def rank_windows(targets, site, dates, opts=None, log=print):
     usable_targets = []
     skipped = []
     for t in targets:
-        if t.eccentric:
-            log(f'Skipping {t.name} - eccentric orbits not supported (e = {t.e:g}; set Eccentric? to No to treat it as circular)')
-            continue
         if not np.isfinite(target_weight(t, opts)):
             skipped.append(t.name)
             continue
@@ -139,13 +140,21 @@ def rank_windows(targets, site, dates, opts=None, log=print):
             if moon_too_close(altaz, night, opts.moon_sep_min):
                 continue
             phase = orbital_phase(night.times.jd, t.t0, t.period)
-            vpl = planet_rv_circular(phase, kp)
+            if t.eccentric:
+                ### Orbital phase for the geometry; the eclipse at its own time
+                uphase, _, rv = eccentric_orbit(phase, t.e, t.omega)
+                vpl = kp * rv
+                phase = uphase % 1
+                dphase = (orbital_phase(night.times.jd, t.t0, t.period) - eclipse_phase(t.e, t.omega) + 0.5) % 1 - 0.5
+                in_eclipse = np.abs(dphase) < ecl_halfwidth
+            else:
+                vpl = planet_rv_circular(phase, kp)
+                in_eclipse = np.abs(phase - 0.5) < ecl_halfwidth
             fpl = lambert_phase(phase, opts.inclination)
             above = alt > opts.alt_min
             if site.min_altitude is not None:
                 above &= alt > site.min_altitude(altaz.az.deg)
             dayside = (phase > 0.25) & (phase < 0.75)
-            in_eclipse = np.abs(phase - 0.5) < ecl_halfwidth
             usable = dark & above & dayside & ~in_eclipse
             if not np.any(usable):
                 continue

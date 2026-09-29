@@ -28,9 +28,10 @@ What each column comes from:
 
 ## Near-circular orbits
 
-The archive gives WASP-121 b e = 0.0085. Any e > 0 marks a planet as eccentric, and
-`hrccs-plan windows` does not yet rank eccentric orbits, so it would skip WASP-121 b.
-`--circular-below 0.05` writes orbits with e < 0.05 as circular.
+The archive gives WASP-121 b e = 0.0085. Any e > 0 marks a planet as eccentric, and its
+windows are then computed on that Keplerian orbit. For such small eccentricities, usually
+poorly constrained, treating the orbit as circular is simpler: `--circular-below 0.05`
+writes orbits with e < 0.05 as circular.
 
 You can also edit the list by hand: set `Eccentric?` to `No`.
 

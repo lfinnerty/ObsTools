@@ -31,7 +31,7 @@ With the 2-hour eclipse excluded, each 4-hour window sits on one side of seconda
 |---|---|
 | `targets` | `Target`, `read_targets`, `write_targets` (columns matched by name; extra columns kept in `Target.extra`) |
 | `sites` | `get_site`, `SITES`, the built-in site registry and night time grids, `keck2_min_altitude` |
-| `ephemeris` | `orbital_phase`, `planet_rv_circular`, `planet_rv_eccentric`, `solve_kepler`, `lambert_phase`, `propagate_conjunction` |
+| `ephemeris` | `orbital_phase`, `planet_rv_circular`, `planet_rv_eccentric`, `eccentric_orbit`, `eclipse_phase`, `solve_kepler`, `lambert_phase`, `propagate_conjunction` |
 | `visibility` | `night_sky` (Sun and Moon over a night), `airmass`, `moon_too_close`, `dates_between` |
 | `windows` | `WindowOptions`, `rank_windows`, `best_subwindow`, `write_windows`, `read_windows` |
 | `nights` | `NightOptions`, `observable_targets`, `plot_night`, `plan_nights` |

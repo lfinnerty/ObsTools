@@ -32,16 +32,45 @@ CASES = [
 
 @pytest.mark.parametrize('ref,site,dates,kw', CASES)
 def test_regression_against_legacy(tmp_path, examples, ref, site, dates, kw):
+    # the original best_window.py skipped eccentric orbits: compare the circular ones
+    examples = [t for t in examples if not t.eccentric]
     rows, _ = rank_windows(examples, get_site(site), dates_between(*dates), WindowOptions(**kw), log=lambda s: None)
     out = tmp_path / 'w.csv'
     write_windows(str(out), rows, '', command='')
     assert out.read_text() == open(os.path.join(DATA, ref)).read()
 
 
-def test_eccentric_targets_are_skipped(examples):
-    msgs = []
-    rank_windows(examples, get_site('keck'), ['2027-07-10'], log=msgs.append)
-    assert any('HD 80606 b' in m and 'eccentric' in m for m in msgs)
+def test_eccentric_targets_are_ranked(examples):
+    import dataclasses
+    from hrccs_planner.ephemeris import eclipse_phase, orbital_phase
+    # a WASP-33 b-like planet on an e = 0.4 orbit (HD 80606 b's short dayside passages
+    # fall in daylight at Keck in 2027)
+    base = [t for t in examples if t.name == 'WASP-33 b'][0]
+    t = dataclasses.replace(base, name='Ecc b', eccentric=True, e=0.4, omega=60.)
+    dates = dates_between('2027-07-10', '2027-07-30')
+    rows, _ = rank_windows([t], get_site('keck'), dates, WindowOptions(duration=6., snr_min=0.), log=lambda s: None)
+    assert rows
+    for r in rows:
+        # reported phases are orbital phases, on the dayside
+        assert 0.25 < r['ph0'] < 0.75 and 0.25 < r['ph1'] < 0.75
+        # the window avoids the eclipse, which is at its own (time) phase
+        jd0 = __import__('astropy.time', fromlist=['Time']).Time(r['date'] + 'T23:59:59', scale='utc').jd
+        for h in (r['ut0'], r['ut1']):
+            d = (orbital_phase(jd0 + h / 24., t.t0, t.period) - eclipse_phase(t.e, t.omega) + 0.5) % 1 - 0.5
+            assert abs(d) * t.period * 24 >= 3. - 0.02    # half the 6 h eclipse duration
+
+
+def test_small_eccentricity_ranks_like_circular(examples):
+    import dataclasses
+    w121 = [t for t in examples if t.name == 'WASP-121 b']
+    assert w121[0].eccentric and w121[0].e < 0.01
+    circ = [dataclasses.replace(w121[0], eccentric=False, e=0.)]
+    dates = dates_between('2027-01-05', '2027-01-20')
+    opts = WindowOptions(duration=2., snr_min=0.)
+    a, _ = rank_windows(w121, get_site('LCO'), dates, opts, log=lambda s: None)
+    b, _ = rank_windows(circ, get_site('LCO'), dates, opts, log=lambda s: None)
+    assert [r['date'] for r in a] == [r['date'] for r in b]
+    assert np.allclose([r['snr'] for r in a], [r['snr'] for r in b], atol=0.05)
 
 
 def test_gemini_timing_windows():

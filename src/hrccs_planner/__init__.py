@@ -6,6 +6,8 @@ from .ephemeris import (  # noqa: F401
     lambert_phase,
     orbital_phase,
     planet_rv_circular,
+    eccentric_orbit,
+    eclipse_phase,
     planet_rv_eccentric,
     propagate_conjunction,
 )
