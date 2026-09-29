@@ -42,6 +42,7 @@ def test_regression_against_legacy(tmp_path, examples, ref, site, dates, kw):
 
 def test_eccentric_targets_are_ranked(examples):
     import dataclasses
+
     from hrccs_planner.ephemeris import eclipse_phase, orbital_phase
     # a WASP-33 b-like planet on an e = 0.4 orbit (HD 80606 b's short dayside passages
     # fall in daylight at Keck in 2027)
