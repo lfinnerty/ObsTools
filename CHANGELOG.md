@@ -2,6 +2,13 @@
 
 ## Unreleased
 
+- Eccentric orbits: `windows` ranks them (it skipped them before), using the orbital phase
+  (orbital angle from transit / 2 pi) for the dayside, phase curve and reported phases,
+  and excluding the eclipse around its own time. The eccentric velocity curve (`nights`,
+  `planet_rv_eccentric`) now measures the orbit from the transit T0 (it treated T0 as the
+  periastron time) and includes the 1/sqrt(1 - e^2) of the semi-amplitude; omega is the
+  star's argument of periastron. New `ephemeris.eccentric_orbit` and `eclipse_phase`,
+  matching KPIC-Synthgen and KPIC-XCORR-Rebase.
 - `hrccs-plan phase-sensitivity`: the S/N a target's best dayside windows lose to ephemeris
   uncertainty. The planned windows keep their clock times while the true phase is shifted by
   δ ~ N(0, σ_phase), assuming the HRCCS analysis refits the conjunction. It reports the mean and

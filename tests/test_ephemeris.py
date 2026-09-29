@@ -26,10 +26,42 @@ def test_kepler(e):
     assert np.allclose(E - e * np.sin(E), M, atol=1e-10)
 
 
-def test_eccentric_reduces_to_circular():
+@pytest.mark.parametrize('omega', [0., 90., 200., -85.])
+def test_eccentric_reduces_to_circular(omega):
+    from hrccs_planner.ephemeris import eccentric_orbit, eclipse_phase
     phase = np.linspace(0, 1, 30)
-    # e = 0, omega = 90 deg: v = -Kp cos(2 pi phase + pi/2) = Kp sin(2 pi phase)
-    assert np.allclose(planet_rv_eccentric(phase, 100., 0., 90.), planet_rv_circular(phase, 100.))
+    assert np.allclose(planet_rv_eccentric(phase, 100., 0., omega), planet_rv_circular(phase, 100.))
+    uphase, rscale, _ = eccentric_orbit(phase, 0., omega)
+    assert np.allclose(uphase, phase) and np.allclose(rscale, 1.)
+    assert eclipse_phase(0., omega) == pytest.approx(0.5)
+
+
+@pytest.mark.parametrize('e,omega', [(0.3, 60.), (0.6, 200.), (0.93, -58.9)])
+def test_eccentric_orbit_against_kepler(e, omega):
+    from hrccs_planner.ephemeris import eccentric_orbit, eclipse_phase
+    # independent orbit: planet position from Kepler's equation (Newton), T0 = transit
+    w = np.radians(omega)
+    f0 = np.pi / 2 - w
+    E0 = 2 * np.arctan(np.sqrt((1 - e) / (1 + e)) * np.tan(f0 / 2))
+    tp = -(E0 - e * np.sin(E0)) / (2 * np.pi)          # periastron, in periods from T0
+    phase = np.linspace(-0.2, 1.2, 14001)
+    M = 2 * np.pi * (phase - tp)
+    E = M + e * np.sin(M)
+    for _ in range(60):
+        E = E - (E - e * np.sin(E) - M) / (1 - e * np.cos(E))
+    f = 2 * np.arctan2(np.sqrt(1 + e) * np.sin(E / 2), np.sqrt(1 - e) * np.cos(E / 2))
+    r = (1 - e ** 2) / (1 + e * np.cos(f))
+    z = r * np.sin(w + np.pi + f)                        # line of sight, away from us
+    x = r * np.cos(w + np.pi + f)                        # along the motion at transit
+    uphase, rscale, rv = eccentric_orbit(phase, e, omega)
+    # velocity in units of 2 pi a / P: the semi-amplitude is 1/sqrt(1-e^2)
+    assert np.allclose(rv, np.gradient(z, phase) / (2 * np.pi), atol=2e-3 * np.max(np.abs(rv)))
+    # (solve_kepler's fixed-point iteration is good to ~1e-4 at e = 0.93)
+    assert np.allclose(rscale * np.sin(2 * np.pi * uphase), x, atol=5e-4)
+    assert np.allclose(-rscale * np.cos(2 * np.pi * uphase), z, atol=5e-4)
+    # at the eclipse time the planet is behind the star (x = 0, z > 0)
+    uph_e, rs_e, _ = eccentric_orbit(eclipse_phase(e, omega), e, omega)
+    assert (uph_e % 1) == pytest.approx(0.5, abs=1e-4)
 
 
 def test_lambert_phase():

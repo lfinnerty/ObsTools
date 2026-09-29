@@ -10,7 +10,9 @@ curve f and the planet-velocity range, so the S/N of `windows` becomes
 
 For each target's best windows this module averages S/N(delta) / S/N(0) over
 delta ~ N(0, sigma_phase) and reports the mean and 10th percentile, for one or
-more uncertainty scenarios. See docs/method.md.
+more uncertainty scenarios. For an eccentric orbit, delta shifts the time since
+transit; the dayside, eclipse, phase curve and velocities then follow the orbit as
+in `windows` (ephemeris.eccentric_orbit). See docs/method.md.
 """
 import csv
 import os
@@ -20,7 +22,14 @@ from typing import Optional
 import numpy as np
 from astropy.time import Time
 
-from .ephemeris import lambert_phase, orbital_phase, planet_rv_circular, propagate_conjunction
+from .ephemeris import (
+    eccentric_orbit,
+    eclipse_phase,
+    lambert_phase,
+    orbital_phase,
+    planet_rv_circular,
+    propagate_conjunction,
+)
 from .visibility import airmass as airmass_of
 from .visibility import night_sky
 from .windows import rank_windows
@@ -72,13 +81,26 @@ def snr_versus_shift(target, row, site, opts, deltas=DELTA_GRID):
         above &= alt > site.min_altitude(altaz.az.deg)
     hours = night.hours
     ecl_halfwidth = 0.5 * opts.duration / 24. / target.period
+    if target.eccentric:
+        # as rank_windows: dayside by orbital phase, the eclipse around its own time
+        geo = eccentric_orbit(phase, target.e, target.omega)[0] % 1
+        out_of_eclipse = np.abs((phase - eclipse_phase(target.e, target.omega) + 0.5) % 1 - 0.5) >= ecl_halfwidth
+    else:
+        geo = phase
+        out_of_eclipse = np.abs(phase - 0.5) >= ecl_halfwidth
     # The same samples rank_windows used: usable time within the window's UT span.
     mask = (night.dark(opts.twilight) & above & (hours >= row['ut0'] - 1e-9) & (hours <= row['ut1'] + 1e-9)
-            & (phase > 0.25) & (phase < 0.75) & (np.abs(phase - 0.5) >= ecl_halfwidth))
+            & (geo > 0.25) & (geo < 0.75) & out_of_eclipse)
     shifted = (phase[mask][np.newaxis, :] + np.asarray(deltas)[:, np.newaxis]) % 1
     kp = target.kp_max * np.sin(np.radians(opts.inclination))
-    signal = np.sum(lambert_phase(shifted, opts.inclination) ** 2 * wam[mask], axis=1)
-    velocity = planet_rv_circular(shifted, kp)
+    if target.eccentric:
+        # delta shifts the time since transit; the orbit gives the geometry and velocity
+        uphase, _, rv = eccentric_orbit(shifted, target.e, target.omega)
+        signal = np.sum(lambert_phase(uphase % 1, opts.inclination) ** 2 * wam[mask], axis=1)
+        velocity = kp * rv
+    else:
+        signal = np.sum(lambert_phase(shifted, opts.inclination) ** 2 * wam[mask], axis=1)
+        velocity = planet_rv_circular(shifted, kp)
     snr = np.sqrt(signal * (velocity.max(axis=1) - velocity.min(axis=1)))
     return snr / snr[np.argmin(np.abs(deltas))]
 

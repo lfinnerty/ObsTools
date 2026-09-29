@@ -3,6 +3,8 @@ spectroscopy (HRCCS) of exoplanet atmospheres."""
 __version__ = '0.1.0'
 
 from .ephemeris import (  # noqa: F401
+    eccentric_orbit,
+    eclipse_phase,
     lambert_phase,
     orbital_phase,
     planet_rv_circular,

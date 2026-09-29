@@ -47,6 +47,21 @@ def test_snr_is_unchanged_without_a_shift_and_falls_off_eclipse(kelt9):
     assert ratio[np.abs(DELTA_GRID) > 0.15].max() < 0.9
 
 
+def test_eccentric_orbit(kelt9):
+    site = get_site('keck')
+    rows, _ = rank_windows([kelt9], site, DATES, OPTS, log=lambda s: None)
+    best = max(rows, key=lambda r: r['snr'])
+    # a (nearly) zero eccentricity reproduces the circular curve
+    ecc0 = dataclasses.replace(kelt9, eccentric=True, e=1e-9, omega=40.)
+    assert np.allclose(snr_versus_shift(ecc0, best, site, OPTS), snr_versus_shift(kelt9, best, site, OPTS), atol=1e-6)
+    # an eccentric orbit: its own best window, S/N 1 at zero shift and lower off it
+    ecc = dataclasses.replace(kelt9, eccentric=True, e=0.3, omega=60.)
+    rows, _ = rank_windows([ecc], site, DATES, OPTS, log=lambda s: None)
+    ratio = snr_versus_shift(ecc, max(rows, key=lambda r: r['snr']), site, OPTS)
+    assert ratio[np.argmin(np.abs(DELTA_GRID))] == pytest.approx(1.)
+    assert np.all(np.isfinite(ratio)) and ratio.min() < 0.9
+
+
 def test_sigma_phase_sources(kelt9):
     jd = kelt9.t0 + 500.3
     assert sigma_phase(kelt9, Scenario('three', 'sig 3 h'), jd) == pytest.approx(3 / 24 / kelt9.period)

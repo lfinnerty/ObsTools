@@ -269,7 +269,7 @@ def build_parser():
 
     p = sub.add_parser('windows', parents=[common], help='rank observing windows for dayside emission',
                        description='Rank nights (and the window within each night) for dayside emission '
-                                   'HRCCS of circular-orbit planets. See docs/method.md.')
+                                   'HRCCS (circular or eccentric orbits). See docs/method.md.')
     p.add_argument('targetlist', help='target-list name (<workspace>/targetlists/<name>_targetlist.csv) or path')
     p.add_argument('--site', required=True, help='site, telescope or instrument (hrccs-plan sites)')
     _add_dates(p, single=False)
@@ -378,7 +378,7 @@ def build_parser():
     q = tsub.add_parser('archive', parents=[common], help='from the NASA Exoplanet Archive (pscomppars)')
     q.add_argument('names', nargs='+', help='host or planet names, e.g. WASP-121 "HD 189733"')
     q.add_argument('-o', '--output', help='target-list name (default: the names joined by _)')
-    q.add_argument('--circular-below', type=float, default=0., help='treat orbits with e below this as circular (default 0: any e > 0 is eccentric; `windows` skips eccentric orbits)')
+    q.add_argument('--circular-below', type=float, default=0., help='treat orbits with e below this as circular (default 0: any e > 0 is eccentric)')
     q.add_argument('--refresh', action='store_true', help='query again instead of using the cache')
     q.set_defaults(func=cmd_targetlist_archive)
 

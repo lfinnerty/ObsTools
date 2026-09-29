@@ -13,14 +13,23 @@
 
 ## `windows`: ranking nights for dayside emission
 
-For each target (circular orbits) and night, the **usable time** is the set of samples where
-all of the following hold:
+For each target and night, the **usable time** is the set of samples where all of the
+following hold:
 
 - the target is above `--alt-min` (default 30°, airmass 2), and above the site's pointing
   limit if it has one (`--site keck2` applies the Keck II Nasmyth-deck limit);
 - the Sun is below `--twilight` (default −18°, astronomical twilight);
 - the planet is on its dayside half, orbital phase 0.25–0.75;
 - the planet is not in secondary eclipse, i.e. |phase − 0.5| is at least half of `--duration`.
+
+**Eccentric orbits** (`Eccentric? = Yes`, with `e` and `omega`) use the orbital phase u/2π,
+where u = f + ω − π/2 is the orbital angle from transit (true anomaly f, from Kepler's
+equation): the dayside is u/2π = 0.25–0.75, the phase curve uses it too, and the phases in
+the output are orbital phases. The eclipse is excluded within `--duration`/2 of its own time,
+which is generally not half an orbit after transit. The velocity is the Keplerian curve,
+v = −Kp (cos(f + ω) + e cos ω)/√(1 − e²) with Kp = Kp_max sin i (docs/targetlist_format.md). The phase curve is geometric: the dayside flux doesn't follow the changing
+irradiation. Very eccentric planets are on their dayside only briefly (HD 80606 b: 1.8 d of
+its 111 d orbit, around periastron).
 
 Nights are dropped if either of these holds:
 
@@ -99,7 +108,9 @@ S/N(δ) ∝ √(Σ f(phase + δ)² w Δt · Δv(phase + δ)),
 evaluated on the window's own usable samples, with the same weights as `windows`.
 
 - **Which windows.** Each target's `--top-windows` best windows (default 5), ranked as
-  `windows` ranks them with per-target normalization. Circular orbits only.
+  `windows` ranks them with per-target normalization. For eccentric orbits δ shifts the time
+  since transit, and the dayside, eclipse, phase curve and velocities follow the orbit as in
+  `windows`.
 - **Averaging.** S/N(δ)/S/N(0) is averaged over δ ~ N(0, σ_phase). The command reports the mean
   and the 10th percentile, i.e. the S/N of an unlucky ephemeris, both averaged over the windows.
 - **Where σ comes from.** Either the T0 and period uncertainty columns (`T err (d)`,
