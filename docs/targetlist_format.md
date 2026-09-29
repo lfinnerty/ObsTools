@@ -15,12 +15,12 @@ through to the outputs and can be used for weighting, e.g. `--contrast-column`.
 | `a (AU)` | | AU | Informational |
 | `T transit/inf conj (JD)` | yes | JD or BJD | Transit, or inferior conjunction for non-transiting planets. Phase 0. |
 | `Obs status` | | text | Informational; `KPIC obs status` is also accepted |
-| `Eccentric?` | | Y/Yes/N/No | Defaults to `e > 0` if missing. `windows` skips eccentric orbits; `nights` handles them. |
+| `Eccentric?` | | Y/Yes/N/No | Defaults to `e > 0` if missing. Eccentric orbits use `e` and `omega` in `nights` and `windows`. |
 | `Kp max (km/s)` | yes | km/s | **Total** orbital velocity 2πa/P, i.e. Kp for sin i = 1 (see below) |
 | `Transiting?` | | Y/N | Informational |
 | `Kmag (<9)` | | mag | Used by `windows --weight-kmag` |
 | `e` | | | Eccentricity |
-| `omega` | | deg | Argument of periastron (eccentric orbits) |
+| `omega` | | deg | The star's argument of periastron (the RV convention, as in the NASA Exoplanet Archive), for eccentric orbits |
 | `inc` | | deg | Informational. The planners use `--inclination` for all targets. |
 
 Minimal example:
@@ -46,7 +46,9 @@ first 14 columns are in the order above, are read unchanged.
 ## Velocity and phase convention
 
 - **Phase 0** is `T transit/inf conj` and **phase 0.5** is secondary eclipse (for circular
-  orbits).
+  orbits). For eccentric orbits `T transit/inf conj` is still the transit (inferior
+  conjunction), and the geometry uses the orbital phase (0.5 at secondary eclipse); see
+  docs/method.md.
 - The planet's velocity relative to the star is v = Kp sin(2π phase). It is positive, i.e.
   receding, just after transit, and decreases through secondary eclipse.
-- For eccentric orbits, the Keplerian curve is used: v = −Kp (cos(f + ω) + e cos ω).
+- For eccentric orbits, the Keplerian curve is used: v = −Kp (cos(f + ω) + e cos ω)/√(1 − e²), with Kp = `Kp max` sin i, so `Kp max` stays 2πa/P.

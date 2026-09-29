@@ -69,7 +69,6 @@ Run `hrccs-plan COMMAND --help` for every option.
 
 ## Roadmap
 
-- Emission-window ranking for eccentric orbits.
 - Instrument presets: slit width, overheads, saturation-aware exposure times.
 - A PyPI release.
 
