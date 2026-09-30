@@ -355,7 +355,8 @@ def build_parser():
                                    'per-target normalization) and average the S/N over a true conjunction offset '
                                    'delta ~ N(0, sigma_phase), assuming the HRCCS analysis refits the conjunction so '
                                    'only the covered phase curve and velocity range change. Compare scenarios, e.g. '
-                                   'current and improved ephemerides. Circular orbits only. See docs/method.md.')
+                                   'current and improved ephemerides. For eccentric orbits delta shifts the time since '
+                                   'transit and the geometry follows the orbit, as in `windows`. See docs/method.md.')
     p.add_argument('targetlist', help='target-list name or path')
     p.add_argument('--site', required=True, help='site, telescope or instrument (hrccs-plan sites)')
     _add_dates(p, single=False)
